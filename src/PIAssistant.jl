@@ -1,5 +1,8 @@
 module PIAssistant
 
-greet() = print("Hello World!")
+    # Function to call the GUI
+    export PIAssistantGUI()
 
+    # Include the main file .fl
+    include("mainPIGUI.jl")
 end # module
