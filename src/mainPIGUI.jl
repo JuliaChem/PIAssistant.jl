@@ -1,1 +1,5 @@
-using Gtk.ShortNames, DataFrames, DefaultApplication, Mustache
+function PIAssistantGUI()
+
+    println("Works!")
+
+end|
