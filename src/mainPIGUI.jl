@@ -19,7 +19,7 @@ function PIAssistantGUI()
     global ws, hs = screen_size()
 
     # Creates a temporary Image as index.
-    Drawing(round(ws/3.5), round(hs/2.5), indexImgPathT)
+    Drawing(round(ws/3.5), round(hs/(3.5*0.563)), indexImgPathT)
 
     origin()
     background("white")
@@ -28,7 +28,7 @@ function PIAssistantGUI()
     w = img.width
     h = img.height
 
-    scale(0.4, 0.4)
+    scale((ws/3.5)/w, (hs/3.5)/h)
     placeimage(img, -w/2, -h/2, 1)
 
     finish()
@@ -42,7 +42,7 @@ function PIAssistantGUI()
     set_gtk_property!(winIndex, :window_position, 3)
     set_gtk_property!(winIndex, :accept_focus, true)
     set_gtk_property!(winIndex, :width_request, round(ws/3.5))
-    set_gtk_property!(winIndex, :height_request, round(hs/2.5))
+    set_gtk_property!(winIndex, :height_request, round(hs/(3.5*0.563)))
 
     Gtk.showall(winIndex)
 
