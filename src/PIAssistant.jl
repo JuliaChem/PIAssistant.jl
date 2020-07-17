@@ -5,8 +5,6 @@ module PIAssistant
     # PhD. Kelvyn B. Sánchez Sánchez
     # Instituto Tecnológico de Celaya/TecNM - México
 
-    using Gtk.ShortNames, DataFrames, DefaultApplication, Mustache
-
     # Function to call the GUI
     export PIAssistantGUI
 
