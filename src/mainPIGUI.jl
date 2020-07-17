@@ -16,21 +16,26 @@ if Sys.islinux()
 end
 
 function PIAssistantGUI()
-    global ws, hs = screen_size()
+    global wSc, hSc = screen_size()
+
+    img = readpng(indexImgPath)
+    wImg = img.width
+    hImg = img.height
+
+    # Ratio for proportion
+    imgP = hImg/wImg
+
+    x = round((hSc/2)/imgP)/wImg
+    y = round(hSc/2)/hImg
 
     # Creates a temporary Image as index.
-    Drawing(round(ws/3.5), round(hs/(3.5*0.563)), indexImgPathT)
+    Drawing(round((hSc/2)/imgP)+60, round(hSc/2)+60, indexImgPathT)
 
     origin()
     background("white")
 
-    img = readpng(indexImgPath)
-    w = img.width
-    h = img.height
-
-    scale((ws/3.5)/w, (hs/3.5)/h)
-    placeimage(img, -w/2, -h/2, 1)
-
+    scale(x, y)
+    placeimage(img, -wImg/2, -hImg/2, 1)
     finish()
     preview()
 
@@ -41,8 +46,8 @@ function PIAssistantGUI()
     set_gtk_property!(winIndex, :decorated, false)
     set_gtk_property!(winIndex, :window_position, 3)
     set_gtk_property!(winIndex, :accept_focus, true)
-    set_gtk_property!(winIndex, :width_request, round(ws/3.5))
-    set_gtk_property!(winIndex, :height_request, round(hs/(3.5*0.563)))
+    set_gtk_property!(winIndex, :width_request, round((hSc/2)/imgP)+60)
+    set_gtk_property!(winIndex, :height_request, round(hSc/2)+60)
 
     Gtk.showall(winIndex)
 
