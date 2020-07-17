@@ -8,7 +8,7 @@ module PIAssistant
     using Gtk.ShortNames, DataFrames, DefaultApplication, Mustache
 
     # Function to call the GUI
-    export PIAssistantGUI()
+    export PIAssistantGUI
 
     # Include the main file .fl
     include("mainPIGUI.jl")
