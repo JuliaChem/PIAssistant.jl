@@ -12,7 +12,7 @@ if Sys.islinux()
     global indexImgPath =
         joinpath(dirname(Base.source_path()), "figures/index_logo.png")
     global indexImgPathT =
-        joinpath(dirname(Base.source_path()), "/temp/index_logo_temp.png")
+        joinpath(dirname(Base.source_path()), "/tmp/index_logo_temp.png")
 end
 
 function PIAssistantGUI()
