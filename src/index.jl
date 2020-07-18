@@ -53,4 +53,6 @@ function PIAssistantGUI()
 
     sleep(2)
     destroy(winIndex)
+
+    mainPI()
 end

@@ -6,8 +6,10 @@ module PIAssistant
     # Instituto Tecnológico de Celaya/TecNM - México
 
     # Function to call the GUI
+    export mainPI
     export PIAssistantGUI
 
     # Include the main file .fl
-    include("mainPIGUI.jl")
+    include("index.jl")
+    include("main.jl")
 end # module
