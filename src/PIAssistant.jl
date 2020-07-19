@@ -3,7 +3,7 @@ module PIAssistant
     # PhD. Arick Castillo Landero
     # PhD. Arturo Jimenez Gutierrez
     # PhD. Kelvyn B. Sánchez Sánchez
-    # Instituto Tecnológico de Celaya/TecNM - México
+    # Instituto Tecnológico de Celaya/TecNM - México.
 
     # Function to call the GUI
     export mainPI
