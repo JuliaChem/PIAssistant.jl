@@ -108,6 +108,12 @@ function mainPI()
     push!(mainToolbar, SeparatorToolItem())
     push!(mainToolbar, closeToolbar)
 
+    # Main grid
+
+    mainGrid = Grid()
+    set_gtk_property!(mainGrid, :column_homogeneous, true)
+    set_gtk_property!(mainGrid, :row_homogeneous, false)
+
     gridToolbar = Grid()
     set_gtk_property!(gridToolbar, :column_homogeneous, true)
     set_gtk_property!(gridToolbar, :row_homogeneous, false)
@@ -116,6 +122,29 @@ function mainPI()
     push!(frameToolbar, mainToolbar)
     gridToolbar[1, 1] = frameToolbar
 
-    push!(mainPIWin, gridToolbar)
+    bGrid = Grid()
+    set_gtk_property!(bGrid, :column_spacing, 10)
+    set_gtk_property!(bGrid, :row_spacing, 10)
+    set_gtk_property!(bGrid, :margin_top, 10)
+    set_gtk_property!(bGrid, :margin_bottom, 10)
+    set_gtk_property!(bGrid, :margin_left, 10)
+    set_gtk_property!(bGrid, :margin_right, 10)
+
+    # Frames
+    leftFrame = Frame()
+    set_gtk_property!(leftFrame, :height_request, (h*0.70) - (h*0.70)*0.10 - 20)
+    set_gtk_property!(leftFrame, :width_request, (h/2) - 15)
+
+    rightFrame = Frame()
+    set_gtk_property!(rightFrame, :height_request, (h*0.70) - (h*0.70)*0.10 - 20)
+    set_gtk_property!(rightFrame, :width_request, (h/2) - 15)
+
+    bGrid[1,1] = leftFrame
+    bGrid[2,1] = rightFrame
+
+    mainGrid[1,1] = gridToolbar
+    mainGrid[1,2] = bGrid
+
+    push!(mainPIWin, mainGrid)
     Gtk.showall(mainPIWin)
 end
