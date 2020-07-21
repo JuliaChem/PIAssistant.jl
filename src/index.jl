@@ -1,4 +1,5 @@
 using Gtk.ShortNames, DataFrames, DefaultApplication, Mustache, Luxor
+using JLD
 
 # Path to index logo
 if Sys.iswindows()
