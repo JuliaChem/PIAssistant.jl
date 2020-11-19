@@ -1,6 +1,6 @@
 # General Settings
 if Sys.iswindows()
-    # Icons path
+    # Icons path on Windows
     global ico1 = joinpath(dirname(Base.source_path()), "icons\\icon_new.ico")
     global ico2 = joinpath(dirname(Base.source_path()), "icons\\icon_pdf.ico")
     global ico3 = joinpath(dirname(Base.source_path()), "icons\\icon_close.ico")
@@ -11,7 +11,7 @@ if Sys.iswindows()
 end
 
 if Sys.islinux()
-    # Icons path
+    # Icons path on Linux
     global ico1 = joinpath(dirname(Base.source_path()), "icons/icon_new.ico")
     global ico2 = joinpath(dirname(Base.source_path()), "icons/icon_pdf.ico")
     global ico3 = joinpath(dirname(Base.source_path()), "icons/icon_close.ico")
@@ -20,6 +20,8 @@ if Sys.islinux()
     global ico6 = joinpath(dirname(Base.source_path()), "icons/icon_open.ico")
     global ico7 = joinpath(dirname(Base.source_path()), "icons/icon_save.ico")
 end
+
+# TODO: check compatibility to macOS
 
 function mainPI()
     # Measurement of screen size to allow compatibility to all screen devices
@@ -61,9 +63,8 @@ function mainPI()
     set_gtk_property!(settingsToolbar, :label, "Settings")
     set_gtk_property!(settingsToolbar, :tooltip_markup, "Settings")
 
-
     closeToolbar = ToolButton("")
-    closeToolbarImg= Image()
+    closeToolbarImg = Image()
     set_gtk_property!(closeToolbarImg, :file, ico3)
     set_gtk_property!(closeToolbar, :icon_widget, closeToolbarImg)
     set_gtk_property!(closeToolbar, :label, "Close")
@@ -73,21 +74,21 @@ function mainPI()
     end
 
     helpToolbar = ToolButton("")
-    helpToolbarImg= Image()
+    helpToolbarImg = Image()
     set_gtk_property!(helpToolbarImg, :file, ico5)
     set_gtk_property!(helpToolbar, :icon_widget, helpToolbarImg)
     set_gtk_property!(helpToolbar, :label, "Help")
     set_gtk_property!(helpToolbar, :tooltip_markup, "Help")
 
     openToolbar = ToolButton("")
-    openToolbarImg= Image()
+    openToolbarImg = Image()
     set_gtk_property!(openToolbarImg, :file, ico6)
     set_gtk_property!(openToolbar, :icon_widget, openToolbarImg)
     set_gtk_property!(openToolbar, :label, "Open")
     set_gtk_property!(openToolbar, :tooltip_markup, "Open")
 
     saveToolbar = ToolButton("")
-    saveToolbarImg= Image()
+    saveToolbarImg = Image()
     set_gtk_property!(saveToolbarImg, :file, ico7)
     set_gtk_property!(saveToolbar, :icon_widget, saveToolbarImg)
     set_gtk_property!(saveToolbar, :label, "Save")
@@ -95,7 +96,7 @@ function mainPI()
 
     # Toolbar
     mainToolbar = Toolbar()
-    set_gtk_property!(mainToolbar, :height_request, (h * 0.70)*0.10)
+    set_gtk_property!(mainToolbar, :height_request, (h * 0.70) * 0.10)
     set_gtk_property!(mainToolbar, :toolbar_style, 2)
     push!(mainToolbar, newToolbar)
     push!(mainToolbar, SeparatorToolItem())
@@ -109,7 +110,6 @@ function mainPI()
     push!(mainToolbar, closeToolbar)
 
     # Main grid
-
     mainGrid = Grid()
     set_gtk_property!(mainGrid, :column_homogeneous, true)
     set_gtk_property!(mainGrid, :row_homogeneous, false)
@@ -123,27 +123,63 @@ function mainPI()
     gridToolbar[1, 1] = frameToolbar
 
     bGrid = Grid()
-    set_gtk_property!(bGrid, :column_spacing, 10)
-    set_gtk_property!(bGrid, :row_spacing, 10)
-    set_gtk_property!(bGrid, :margin_top, 10)
-    set_gtk_property!(bGrid, :margin_bottom, 10)
-    set_gtk_property!(bGrid, :margin_left, 10)
-    set_gtk_property!(bGrid, :margin_right, 10)
+    set_gtk_property!(bGrid, :column_spacing, 0)
+    set_gtk_property!(bGrid, :row_spacing, 0)
+    set_gtk_property!(bGrid, :margin_top, 0)
+    set_gtk_property!(bGrid, :margin_bottom, 0)
+    set_gtk_property!(bGrid, :margin_left, 0)
+    set_gtk_property!(bGrid, :margin_right, 0)
 
-    # Frames
-    leftFrame = Frame()
-    set_gtk_property!(leftFrame, :height_request, (h*0.70) - (h*0.70)*0.10 - 20)
-    set_gtk_property!(leftFrame, :width_request, (h/2) - 15)
+    # Main notebook
+    mainNotebook = Notebook()
 
-    rightFrame = Frame()
-    set_gtk_property!(rightFrame, :height_request, (h*0.70) - (h*0.70)*0.10 - 20)
-    set_gtk_property!(rightFrame, :width_request, (h/2) - 15)
+    # Height for notebook
+    hNb = (h * 0.70) - (h * 0.70) * 0.10 - 40
 
-    bGrid[1,1] = leftFrame
-    bGrid[2,1] = rightFrame
+    ###############################################################################
+    # Base case design
+    ###############################################################################
+    settingFrame = Frame()
+    set_gtk_property!(settingFrame, :height_request, hNb)
+    set_gtk_property!(settingFrame, :width_request, h)
 
-    mainGrid[1,1] = gridToolbar
-    mainGrid[1,2] = bGrid
+    settingGrid = Grid()
+    set_gtk_property!(settingGrid, :column_spacing, 10)
+    set_gtk_property!(settingGrid, :row_spacing, 10)
+    set_gtk_property!(settingGrid, :margin_top, 10)
+    set_gtk_property!(settingGrid, :margin_bottom, 10)
+    set_gtk_property!(settingGrid, :margin_left, 10)
+    set_gtk_property!(settingGrid, :margin_right, 10)
+
+    # Base case design frames
+    settingFrameLeft = Frame("Base Case Design")
+    set_gtk_property!(settingFrameLeft, :height_request, hNb - 20)
+    set_gtk_property!(settingFrameLeft, :width_request, (h / 2) - 15)
+    set_gtk_property!(settingFrameLeft, :label_xalign, 0.50)
+
+    settingFrameRigth = Frame("Intensification Criterion")
+    set_gtk_property!(settingFrameRigth, :height_request, hNb - 20)
+    set_gtk_property!(settingFrameRigth, :width_request, (h / 2) - 15)
+    set_gtk_property!(settingFrameRigth, :label_xalign, 0.50)
+
+    settingGrid[1, 1] = settingFrameLeft
+    settingGrid[2, 1] = settingFrameRigth
+    push!(settingFrame, settingGrid)
+
+    ###############################################################################
+    # Results frame
+    ###############################################################################
+    resultsFrame = Frame()
+    set_gtk_property!(resultsFrame, :height_request, hNb)
+    set_gtk_property!(resultsFrame, :width_request, h)
+
+    push!(mainNotebook, settingFrame, "Settings")
+    push!(mainNotebook, resultsFrame, "Results")
+
+    bGrid[1, 1] = mainNotebook
+
+    mainGrid[1, 1] = gridToolbar
+    mainGrid[1, 2] = bGrid
 
     push!(mainPIWin, mainGrid)
     Gtk.showall(mainPIWin)

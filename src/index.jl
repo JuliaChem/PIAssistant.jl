@@ -52,7 +52,7 @@ function PIAssistantGUI()
 
     Gtk.showall(winIndex)
 
-    sleep(2)
+    sleep(3)
     destroy(winIndex)
 
     mainPI()
