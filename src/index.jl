@@ -1,4 +1,4 @@
-using Gtk.ShortNames, DataFrames, DefaultApplication, Mustache, Luxor
+using Gtk.ShortNames, DataFrames, DefaultApplication, Mustache, Luxor, Printf
 using JLD
 
 # Path to index logo

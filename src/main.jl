@@ -38,9 +38,9 @@ function mainPI()
     set_gtk_property!(mainPIWin, :height_request, h * 0.70)
     set_gtk_property!(mainPIWin, :visible, false)
 
-    ###############################################################################
+    ####################################################################################################################
     # Toolbar
-    ################################################################################
+    ####################################################################################################################
     # Menu Icons
     newToolbar = ToolButton("")
     newToolbarImg = Image()
@@ -136,9 +136,9 @@ function mainPI()
     # Height for notebook
     hNb = (h * 0.70) - (h * 0.70) * 0.10 - 40
 
-    ###############################################################################
-    # Base case design
-    ###############################################################################
+    ####################################################################################################################
+    # Setting frame
+    ####################################################################################################################
     settingFrame = Frame()
     set_gtk_property!(settingFrame, :height_request, hNb)
     set_gtk_property!(settingFrame, :width_request, h)
@@ -151,24 +151,269 @@ function mainPI()
     set_gtk_property!(settingGrid, :margin_left, 10)
     set_gtk_property!(settingGrid, :margin_right, 10)
 
-    # Base case design frames
-    settingFrameLeft = Frame("Base Case Design")
-    set_gtk_property!(settingFrameLeft, :height_request, hNb - 20)
-    set_gtk_property!(settingFrameLeft, :width_request, (h / 2) - 15)
-    set_gtk_property!(settingFrameLeft, :label_xalign, 0.50)
+    settingGridLeft = Grid()
+    set_gtk_property!(settingGridLeft, :row_spacing, 10)
 
+    settingGridRight = Grid()
+    set_gtk_property!(settingGridLeft, :row_spacing, 10)
+
+    ####################################################################################################################
+    baseCaseFrame = Frame(" Base Case Design ")
+    set_gtk_property!(baseCaseFrame, :height_request, (hNb - 30)/2)
+    set_gtk_property!(baseCaseFrame, :width_request, (h / 2) - 15)
+    set_gtk_property!(baseCaseFrame, :label_xalign, 0.50)
+
+    baseCaseGrid = Grid()
+    set_gtk_property!(baseCaseGrid, :column_spacing, 10)
+    set_gtk_property!(baseCaseGrid, :row_spacing, 10)
+    set_gtk_property!(baseCaseGrid, :margin_top, 5)
+    set_gtk_property!(baseCaseGrid, :margin_bottom, 10)
+    set_gtk_property!(baseCaseGrid, :margin_left, 10)
+    set_gtk_property!(baseCaseGrid, :margin_right, 10)
+
+    # TreeView for Base Case Design
+    wBC = (h / 2) - 15
+    baseCaseFrameTree = Frame()
+    set_gtk_property!(baseCaseFrameTree, :height_request, (hNb - 30)/2 - 75)
+    set_gtk_property!(baseCaseFrameTree, :width_request, wBC - 20)
+    baseCaseScroll = ScrolledWindow()
+    push!(baseCaseFrameTree, baseCaseScroll)
+
+    # Table for Case Design
+    baseCaseList = ListStore(String, String, String, String, String)
+
+    # Visual Table for Case Design
+    baseCaseTreeView = TreeView(TreeModel(baseCaseList))
+    set_gtk_property!(baseCaseTreeView, :reorderable, true)
+    set_gtk_property!(baseCaseTreeView, :enable_grid_lines, 3)
+
+    # Set selectable
+    selmodelBaseCase = G_.selection(baseCaseTreeView)
+
+    renderTxt = CellRendererText()
+
+    c1 = TreeViewColumn("ID", renderTxt, Dict([("text", 0)]))
+    c2 = TreeViewColumn("Name", renderTxt, Dict([("text", 1)]))
+    c3 = TreeViewColumn("Equipments", renderTxt, Dict([("text", 2)]))
+    c4 = TreeViewColumn("Criterion", renderTxt, Dict([("text", 3)]))
+    c5 = TreeViewColumn("Status", renderTxt, Dict([("text", 4)]))
+
+    # Allows to select rows
+    for c in [c1, c2, c3, c4, c5]
+        Gtk.GAccessor.resizable(c, true)
+    end
+
+    push!(baseCaseTreeView, c1, c2, c3, c4, c5)
+    push!(baseCaseScroll, baseCaseTreeView)
+
+    baseCaseGrid[1:4, 1] = baseCaseFrameTree
+
+    # Buttons for base case design
+    addBC = Button("Add")
+    set_gtk_property!(addBC, :width_request, (wBC - 5*10)/4)
+    signal_connect(addBC, :clicked) do widget
+        addBCWin = Window()
+        set_gtk_property!(addBCWin, :title, "New Base Case Design")
+        set_gtk_property!(addBCWin, :window_position, 3)
+        set_gtk_property!(addBCWin, :width_request, h/3)
+        set_gtk_property!(addBCWin, :height_request, h/5)
+        set_gtk_property!(addBCWin, :accept_focus, true)
+
+        addBCGrid = Grid()
+        set_gtk_property!(addBCGrid, :margin_top, 10)
+        set_gtk_property!(addBCGrid, :margin_left, 10)
+        set_gtk_property!(addBCGrid, :margin_right, 10)
+        set_gtk_property!(addBCGrid, :margin_bottom, 10)
+        set_gtk_property!(addBCGrid, :column_spacing, 10)
+        set_gtk_property!(addBCGrid, :row_spacing, 10)
+        set_gtk_property!(addBCGrid, :column_homogeneous, true)
+        set_gtk_property!(addBCGrid, :valign, 3)
+        set_gtk_property!(addBCGrid, :halign, 3)
+
+        newBCLabel = Label("Enter name for new Base Case Design:")
+
+        newBCEntry = Entry()
+        set_gtk_property!(newBCEntry, :tooltip_markup, "Enter value")
+        set_gtk_property!(newBCEntry, :width_request, h/4)
+        set_gtk_property!(newBCEntry, :text, "")
+
+        baseCaseEntryLabel = @sprintf("Base Case_%i", length(baseCaseList)+1)
+        set_gtk_property!(newBCEntry, :text, baseCaseEntryLabel)
+
+        newBCAdd = Button("Add")
+        signal_connect(newBCAdd, :clicked) do widget
+            nameBC = get_gtk_property(newBCEntry, :text, String)
+
+            if length(baseCaseList) == 0
+                push!(baseCaseList, (length(baseCaseList)+1, nameBC, "Incomplete", "Incomplete", "Incomplete"))
+                set_gtk_property!(clearBC, :sensitive, true)
+                destroy(addBCWin)
+            else
+                t = zeros(1, length(baseCaseList))
+                for i=1:length(baseCaseList)
+                    t[i] = nameBC == baseCaseList[i,2]
+                end
+
+                if sum(t) == 1
+                    wmgs1 = warn_dialog("Name for base case design is already in use!", addBCWin)
+                    set_gtk_property!(newBCEntry, :text, baseCaseEntryLabel)
+                else
+                    push!(baseCaseList, (length(baseCaseList)+1, nameBC, "Incomplete", "Incomplete", "Incomplete"))
+                    set_gtk_property!(clearBC, :sensitive, true)
+                    destroy(addBCWin)
+                end
+            end
+        end
+
+        signal_connect(addBCWin, "key-press-event") do widget, event
+            if event.keyval == 65293
+                nameBC = get_gtk_property(newBCEntry, :text, String)
+
+                if length(baseCaseList) == 0
+                    push!(baseCaseList, (length(baseCaseList)+1, nameBC, "Incomplete", "Incomplete", "Incomplete"))
+                    set_gtk_property!(clearBC, :sensitive, true)
+                    destroy(addBCWin)
+                else
+                    t = zeros(1, length(baseCaseList))
+                    for i=1:length(baseCaseList)
+                        t[i] = nameBC == baseCaseList[i,2]
+                    end
+
+                    if sum(t) == 1
+                        wmgs1 = warn_dialog("Name for base case design is already in use!", addBCWin)
+                        set_gtk_property!(newBCEntry, :text, baseCaseEntryLabel)
+                    else
+                        push!(baseCaseList, (length(baseCaseList)+1, nameBC, "Incomplete", "Incomplete", "Incomplete"))
+                        set_gtk_property!(clearBC, :sensitive, true)
+                        destroy(addBCWin)
+                    end
+                end
+            end
+        end
+        newBCClose = Button("Close")
+        signal_connect(newBCClose, :clicked) do widget
+            destroy(addBCWin)
+        end
+        addBCGrid[1:2, 1] = newBCLabel
+        addBCGrid[1:2, 2] = newBCEntry
+        addBCGrid[1, 3] = newBCAdd
+        addBCGrid[2, 3] = newBCClose
+
+        push!(addBCWin, addBCGrid)
+        Gtk.showall(addBCWin)
+    end
+
+    editBC = Button("Edit")
+    set_gtk_property!(editBC, :width_request, (wBC - 5*10)/4)
+    set_gtk_property!(editBC, :sensitive, false)
+
+    deleteBC = Button("Delete")
+    set_gtk_property!(deleteBC, :width_request, (wBC - 5*10)/4)
+    set_gtk_property!(deleteBC, :sensitive, false)
+
+    clearBC = Button("Clear")
+    set_gtk_property!(clearBC, :width_request, (wBC - 5*10)/4)
+    set_gtk_property!(clearBC, :sensitive, false)
+    signal_connect(clearBC, :clicked) do widget
+        empty!(baseCaseList)
+        set_gtk_property!(clearBC, :sensitive, false)
+    end
+    baseCaseGrid[1, 2] = addBC
+    baseCaseGrid[2, 2] = editBC
+    baseCaseGrid[3, 2] = deleteBC
+    baseCaseGrid[4, 2] = clearBC
+
+    push!(baseCaseFrame, baseCaseGrid)
+
+    ####################################################################################################################
+    equipmentFrame = Frame(" Equipments ")
+    set_gtk_property!(equipmentFrame, :height_request, (hNb - 30)/2)
+    set_gtk_property!(equipmentFrame, :width_request, (h / 2) - 15)
+    set_gtk_property!(equipmentFrame, :label_xalign, 0.50)
+
+    equipmentGrid = Grid()
+    set_gtk_property!(equipmentGrid, :column_spacing, 10)
+    set_gtk_property!(equipmentGrid, :row_spacing, 10)
+    set_gtk_property!(equipmentGrid, :margin_top, 5)
+    set_gtk_property!(equipmentGrid, :margin_bottom, 10)
+    set_gtk_property!(equipmentGrid, :margin_left, 10)
+    set_gtk_property!(baseCaseGrid, :margin_right, 10)
+
+    # TreeView for Base Case Design
+    wBC = (h / 2) - 15
+    equipmentFrameTree = Frame()
+    set_gtk_property!(equipmentFrameTree, :height_request, (hNb - 30)/2 - 75)
+    set_gtk_property!(equipmentFrameTree, :width_request, wBC - 20)
+    equipmentScroll = ScrolledWindow()
+    push!(equipmentFrameTree, equipmentScroll)
+
+    # Table for Case Design
+    equipmentList = ListStore(String, String, String, String, String)
+
+    # Visual Table for Case Design
+    equipmentTreeView = TreeView(TreeModel(equipmentList))
+    set_gtk_property!(equipmentTreeView, :reorderable, true)
+    set_gtk_property!(equipmentTreeView, :enable_grid_lines, 3)
+
+    # Set selectable
+    selmodelequipment = G_.selection(equipmentTreeView)
+
+    renderTxt = CellRendererText()
+    set_gtk_property!(renderTxt, :editable, true)
+
+    c1 = TreeViewColumn("#", renderTxt, Dict([("text", 0)]))
+    c2 = TreeViewColumn("ID", renderTxt, Dict([("text", 1)]))
+    c3 = TreeViewColumn("Equipment", renderTxt, Dict([("text", 2)]))
+    c4 = TreeViewColumn("Phenomena", renderTxt, Dict([("text", 3)]))
+
+    # Allows to select rows
+    for c in [c1, c2, c3, c4]
+        Gtk.GAccessor.resizable(c, true)
+    end
+
+    push!(equipmentTreeView, c1, c2, c3, c4)
+    push!(equipmentScroll, equipmentTreeView)
+
+    equipmentGrid[1:4, 1] = equipmentFrameTree
+
+    # Buttons for base case design
+    addEq = Button("Add")
+    set_gtk_property!(addEq, :width_request, (wBC - 5*10)/4)
+
+    editEq = Button("Edit")
+    set_gtk_property!(editEq, :width_request, (wBC - 5*10)/4)
+
+    deleteEq = Button("Delete")
+    set_gtk_property!(deleteEq, :width_request, (wBC - 5*10)/4)
+
+    clearEq = Button("Clear")
+    set_gtk_property!(clearEq, :width_request, (wBC - 5*10)/4)
+
+    equipmentGrid[1, 2] = addEq
+    equipmentGrid[2, 2] = editEq
+    equipmentGrid[3, 2] = deleteEq
+    equipmentGrid[4, 2] = clearEq
+
+    push!(equipmentFrame, equipmentGrid)
+
+    ####################################################################################################################
     settingFrameRigth = Frame("Intensification Criterion")
     set_gtk_property!(settingFrameRigth, :height_request, hNb - 20)
     set_gtk_property!(settingFrameRigth, :width_request, (h / 2) - 15)
     set_gtk_property!(settingFrameRigth, :label_xalign, 0.50)
 
-    settingGrid[1, 1] = settingFrameLeft
-    settingGrid[2, 1] = settingFrameRigth
+    settingGridLeft[1, 1] = baseCaseFrame
+    settingGridLeft[1, 2] = equipmentFrame
+
+    settingGridRight[1, 1] = settingFrameRigth
+
+    settingGrid[1, 1] = settingGridLeft
+    settingGrid[2, 1] = settingGridRight
     push!(settingFrame, settingGrid)
 
-    ###############################################################################
+    ####################################################################################################################
     # Results frame
-    ###############################################################################
+    ####################################################################################################################
     resultsFrame = Frame()
     set_gtk_property!(resultsFrame, :height_request, hNb)
     set_gtk_property!(resultsFrame, :width_request, h)
