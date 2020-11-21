@@ -55,6 +55,7 @@ function mainPI()
     set_gtk_property!(pdfToolbar, :icon_widget, pdfToolbarImg)
     set_gtk_property!(pdfToolbar, :label, "Export")
     set_gtk_property!(pdfToolbar, :tooltip_markup, "Export report")
+    set_gtk_property!(pdfToolbar, :sensitive, false)
 
     settingsToolbar = ToolButton("")
     settingsToolbarImg = Image()
@@ -71,6 +72,12 @@ function mainPI()
     set_gtk_property!(closeToolbar, :tooltip_markup, "Close")
     signal_connect(closeToolbar, :clicked) do widget
         destroy(mainPIWin)
+    end
+
+    signal_connect(mainPIWin, "key-press-event") do widget, event
+        if event.keyval == 65307
+            destroy(mainPIWin)
+        end
     end
 
     helpToolbar = ToolButton("")
@@ -93,6 +100,7 @@ function mainPI()
     set_gtk_property!(saveToolbar, :icon_widget, saveToolbarImg)
     set_gtk_property!(saveToolbar, :label, "Save")
     set_gtk_property!(saveToolbar, :tooltip_markup, "Save")
+    set_gtk_property!(saveToolbar, :sensitive, false)
 
     # Toolbar
     mainToolbar = Toolbar()
@@ -158,6 +166,7 @@ function mainPI()
     set_gtk_property!(settingGridLeft, :row_spacing, 10)
 
     ####################################################################################################################
+    global idxBC = 1
     baseCaseFrame = Frame(" Base Case Design ")
     set_gtk_property!(baseCaseFrame, :height_request, (hNb - 30)/2)
     set_gtk_property!(baseCaseFrame, :width_request, (h / 2) - 15)
@@ -186,6 +195,8 @@ function mainPI()
     baseCaseTreeView = TreeView(TreeModel(baseCaseList))
     set_gtk_property!(baseCaseTreeView, :reorderable, true)
     set_gtk_property!(baseCaseTreeView, :enable_grid_lines, 3)
+    selBC = Gtk.GAccessor.selection(baseCaseTreeView)
+    selBC = Gtk.GAccessor.mode(selBC, Gtk.GConstants.GtkSelectionMode.SINGLE)
 
     # Set selectable
     selmodelBaseCase = G_.selection(baseCaseTreeView)
@@ -219,6 +230,21 @@ function mainPI()
         set_gtk_property!(addBCWin, :height_request, h/5)
         set_gtk_property!(addBCWin, :accept_focus, true)
 
+        addBCMainGrid = Grid()
+        set_gtk_property!(addBCMainGrid, :margin_top, 10)
+        set_gtk_property!(addBCMainGrid, :margin_left, 10)
+        set_gtk_property!(addBCMainGrid, :margin_right, 10)
+        set_gtk_property!(addBCMainGrid, :margin_bottom, 10)
+        set_gtk_property!(addBCMainGrid, :column_spacing, 10)
+        set_gtk_property!(addBCMainGrid, :row_spacing, 10)
+        set_gtk_property!(addBCMainGrid, :column_homogeneous, true)
+        set_gtk_property!(addBCMainGrid, :valign, 3)
+        set_gtk_property!(addBCMainGrid, :halign, 3)
+
+        addBCFrame = Frame()
+        set_gtk_property!(addBCFrame, :width_request, h/3 - 20)
+        set_gtk_property!(addBCFrame, :height_request, h/5 - 20)
+
         addBCGrid = Grid()
         set_gtk_property!(addBCGrid, :margin_top, 10)
         set_gtk_property!(addBCGrid, :margin_left, 10)
@@ -237,7 +263,7 @@ function mainPI()
         set_gtk_property!(newBCEntry, :width_request, h/4)
         set_gtk_property!(newBCEntry, :text, "")
 
-        baseCaseEntryLabel = @sprintf("Base Case_%i", length(baseCaseList)+1)
+        baseCaseEntryLabel = @sprintf("Base Case_%i", idxBC)
         set_gtk_property!(newBCEntry, :text, baseCaseEntryLabel)
 
         newBCAdd = Button("Add")
@@ -247,6 +273,11 @@ function mainPI()
             if length(baseCaseList) == 0
                 push!(baseCaseList, (length(baseCaseList)+1, nameBC, "Incomplete", "Incomplete", "Incomplete"))
                 set_gtk_property!(clearBC, :sensitive, true)
+                set_gtk_property!(deleteBC, :sensitive, true)
+                set_gtk_property!(editBC, :sensitive, true)
+                set_gtk_property!(saveToolbar, :sensitive, true)
+                set_gtk_property!(pdfToolbar, :sensitive, true)
+                global idxBC += 1
                 destroy(addBCWin)
             else
                 t = zeros(1, length(baseCaseList))
@@ -260,6 +291,11 @@ function mainPI()
                 else
                     push!(baseCaseList, (length(baseCaseList)+1, nameBC, "Incomplete", "Incomplete", "Incomplete"))
                     set_gtk_property!(clearBC, :sensitive, true)
+                    set_gtk_property!(deleteBC, :sensitive, true)
+                    set_gtk_property!(editBC, :sensitive, true)
+                    set_gtk_property!(saveToolbar, :sensitive, true)
+                    set_gtk_property!(pdfToolbar, :sensitive, true)
+                    global idxBC += 1
                     destroy(addBCWin)
                 end
             end
@@ -272,6 +308,11 @@ function mainPI()
                 if length(baseCaseList) == 0
                     push!(baseCaseList, (length(baseCaseList)+1, nameBC, "Incomplete", "Incomplete", "Incomplete"))
                     set_gtk_property!(clearBC, :sensitive, true)
+                    set_gtk_property!(deleteBC, :sensitive, true)
+                    set_gtk_property!(editBC, :sensitive, true)
+                    set_gtk_property!(saveToolbar, :sensitive, true)
+                    set_gtk_property!(pdfToolbar, :sensitive, true)
+                    global idxBC += 1
                     destroy(addBCWin)
                 else
                     t = zeros(1, length(baseCaseList))
@@ -285,6 +326,11 @@ function mainPI()
                     else
                         push!(baseCaseList, (length(baseCaseList)+1, nameBC, "Incomplete", "Incomplete", "Incomplete"))
                         set_gtk_property!(clearBC, :sensitive, true)
+                        set_gtk_property!(deleteBC, :sensitive, true)
+                        set_gtk_property!(editBC, :sensitive, true)
+                        set_gtk_property!(saveToolbar, :sensitive, true)
+                        set_gtk_property!(pdfToolbar, :sensitive, true)
+                        global idxBC += 1
                         destroy(addBCWin)
                     end
                 end
@@ -299,7 +345,9 @@ function mainPI()
         addBCGrid[1, 3] = newBCAdd
         addBCGrid[2, 3] = newBCClose
 
-        push!(addBCWin, addBCGrid)
+        push!(addBCFrame, addBCGrid)
+        push!(addBCMainGrid, addBCFrame)
+        push!(addBCWin, addBCMainGrid)
         Gtk.showall(addBCWin)
     end
 
@@ -310,6 +358,21 @@ function mainPI()
     deleteBC = Button("Delete")
     set_gtk_property!(deleteBC, :width_request, (wBC - 5*10)/4)
     set_gtk_property!(deleteBC, :sensitive, false)
+    signal_connect(deleteBC, :clicked) do widget
+        if hasselection(selBC)
+            currentID = selected(selBC)
+            deleteat!(baseCaseList, currentID)
+
+            if length(baseCaseList)==0
+                global idxBC = 1
+                set_gtk_property!(clearBC, :sensitive, false)
+                set_gtk_property!(deleteBC, :sensitive, false)
+                set_gtk_property!(editBC, :sensitive, false)
+                set_gtk_property!(saveToolbar, :sensitive, false)
+                set_gtk_property!(pdfToolbar, :sensitive, false)
+            end
+        end
+    end
 
     clearBC = Button("Clear")
     set_gtk_property!(clearBC, :width_request, (wBC - 5*10)/4)
@@ -317,7 +380,13 @@ function mainPI()
     signal_connect(clearBC, :clicked) do widget
         empty!(baseCaseList)
         set_gtk_property!(clearBC, :sensitive, false)
+        set_gtk_property!(deleteBC, :sensitive, false)
+        set_gtk_property!(editBC, :sensitive, false)
+        set_gtk_property!(saveToolbar, :sensitive, false)
+        set_gtk_property!(pdfToolbar, :sensitive, false)
+        global idxBC = 1
     end
+
     baseCaseGrid[1, 2] = addBC
     baseCaseGrid[2, 2] = editBC
     baseCaseGrid[3, 2] = deleteBC
@@ -361,8 +430,8 @@ function mainPI()
     renderTxt = CellRendererText()
     set_gtk_property!(renderTxt, :editable, true)
 
-    c1 = TreeViewColumn("#", renderTxt, Dict([("text", 0)]))
-    c2 = TreeViewColumn("ID", renderTxt, Dict([("text", 1)]))
+    c1 = TreeViewColumn("ID", renderTxt, Dict([("text", 0)]))
+    c2 = TreeViewColumn("Name", renderTxt, Dict([("text", 1)]))
     c3 = TreeViewColumn("Equipment", renderTxt, Dict([("text", 2)]))
     c4 = TreeViewColumn("Phenomena", renderTxt, Dict([("text", 3)]))
 
@@ -379,15 +448,19 @@ function mainPI()
     # Buttons for base case design
     addEq = Button("Add")
     set_gtk_property!(addEq, :width_request, (wBC - 5*10)/4)
+    set_gtk_property!(addEq, :sensitive, false)
 
     editEq = Button("Edit")
     set_gtk_property!(editEq, :width_request, (wBC - 5*10)/4)
+    set_gtk_property!(editEq, :sensitive, false)
 
     deleteEq = Button("Delete")
     set_gtk_property!(deleteEq, :width_request, (wBC - 5*10)/4)
+    set_gtk_property!(deleteEq, :sensitive, false)
 
     clearEq = Button("Clear")
     set_gtk_property!(clearEq, :width_request, (wBC - 5*10)/4)
+    set_gtk_property!(clearEq, :sensitive, false)
 
     equipmentGrid[1, 2] = addEq
     equipmentGrid[2, 2] = editEq
