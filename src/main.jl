@@ -166,7 +166,11 @@ function mainPI()
     set_gtk_property!(settingGridLeft, :row_spacing, 10)
 
     ####################################################################################################################
+    # Base Case Design
+    ####################################################################################################################
     global idxBC = 1
+    global idxEq = zeros(1, idxBC)
+
     baseCaseFrame = Frame(" Base Case Design ")
     set_gtk_property!(baseCaseFrame, :height_request, (hNb - 30)/2)
     set_gtk_property!(baseCaseFrame, :width_request, (h / 2) - 15)
@@ -201,13 +205,31 @@ function mainPI()
     # Set selectable
     selmodelBaseCase = G_.selection(baseCaseTreeView)
 
-    renderTxt = CellRendererText()
+    renderTxt1 = CellRendererText()
+    renderTxt2 = CellRendererText()
+    set_gtk_property!(renderTxt1, :editable, true)
+    set_gtk_property!(renderTxt2, :editable, false)
 
-    c1 = TreeViewColumn("ID", renderTxt, Dict([("text", 0)]))
-    c2 = TreeViewColumn("Name", renderTxt, Dict([("text", 1)]))
-    c3 = TreeViewColumn("Equipments", renderTxt, Dict([("text", 2)]))
-    c4 = TreeViewColumn("Criterion", renderTxt, Dict([("text", 3)]))
-    c5 = TreeViewColumn("Status", renderTxt, Dict([("text", 4)]))
+    c1 = TreeViewColumn("ID", renderTxt2, Dict([("text", 0)]))
+    c2 = TreeViewColumn("Name", renderTxt1, Dict([("text", 1)]))
+    c3 = TreeViewColumn("Equipments", renderTxt2, Dict([("text", 2)]))
+    c4 = TreeViewColumn("Criterion", renderTxt2, Dict([("text", 3)]))
+    c5 = TreeViewColumn("Status", renderTxt2, Dict([("text", 4)]))
+
+    signal_connect(renderTxt1, "edited") do widget, path, text
+        idxTree = parse(Int, path)
+
+        t = zeros(1, length(baseCaseList))
+        for i=1:length(baseCaseList)
+            t[i] = text == baseCaseList[i,2]
+        end
+
+        if sum(t) == 1
+            warn_dialog("Name for base case design is already in use!", mainPIWin)
+        else
+            baseCaseList[idxTree + 1, 2] = text
+        end
+    end
 
     # Allows to select rows
     for c in [c1, c2, c3, c4, c5]
@@ -217,143 +239,38 @@ function mainPI()
     push!(baseCaseTreeView, c1, c2, c3, c4, c5)
     push!(baseCaseScroll, baseCaseTreeView)
 
-    baseCaseGrid[1:4, 1] = baseCaseFrameTree
+    baseCaseGrid[1:3, 1] = baseCaseFrameTree
 
     # Buttons for base case design
     addBC = Button("Add")
     set_gtk_property!(addBC, :width_request, (wBC - 5*10)/4)
     signal_connect(addBC, :clicked) do widget
-        addBCWin = Window()
-        set_gtk_property!(addBCWin, :title, "New Base Case Design")
-        set_gtk_property!(addBCWin, :window_position, 3)
-        set_gtk_property!(addBCWin, :width_request, h/3)
-        set_gtk_property!(addBCWin, :height_request, h/5)
-        set_gtk_property!(addBCWin, :accept_focus, true)
+        global idxBC
 
-        addBCMainGrid = Grid()
-        set_gtk_property!(addBCMainGrid, :margin_top, 10)
-        set_gtk_property!(addBCMainGrid, :margin_left, 10)
-        set_gtk_property!(addBCMainGrid, :margin_right, 10)
-        set_gtk_property!(addBCMainGrid, :margin_bottom, 10)
-        set_gtk_property!(addBCMainGrid, :column_spacing, 10)
-        set_gtk_property!(addBCMainGrid, :row_spacing, 10)
-        set_gtk_property!(addBCMainGrid, :column_homogeneous, true)
-        set_gtk_property!(addBCMainGrid, :valign, 3)
-        set_gtk_property!(addBCMainGrid, :halign, 3)
+        # Set default name
+        baseCaseName = @sprintf("Base Case_%i", idxBC)
 
-        addBCFrame = Frame()
-        set_gtk_property!(addBCFrame, :width_request, h/3 - 20)
-        set_gtk_property!(addBCFrame, :height_request, h/5 - 20)
-
-        addBCGrid = Grid()
-        set_gtk_property!(addBCGrid, :margin_top, 10)
-        set_gtk_property!(addBCGrid, :margin_left, 10)
-        set_gtk_property!(addBCGrid, :margin_right, 10)
-        set_gtk_property!(addBCGrid, :margin_bottom, 10)
-        set_gtk_property!(addBCGrid, :column_spacing, 10)
-        set_gtk_property!(addBCGrid, :row_spacing, 10)
-        set_gtk_property!(addBCGrid, :column_homogeneous, true)
-        set_gtk_property!(addBCGrid, :valign, 3)
-        set_gtk_property!(addBCGrid, :halign, 3)
-
-        newBCLabel = Label("Enter name for new Base Case Design:")
-
-        newBCEntry = Entry()
-        set_gtk_property!(newBCEntry, :tooltip_markup, "Enter value")
-        set_gtk_property!(newBCEntry, :width_request, h/4)
-        set_gtk_property!(newBCEntry, :text, "")
-
-        baseCaseEntryLabel = @sprintf("Base Case_%i", idxBC)
-        set_gtk_property!(newBCEntry, :text, baseCaseEntryLabel)
-
-        newBCAdd = Button("Add")
-        signal_connect(newBCAdd, :clicked) do widget
-            nameBC = get_gtk_property(newBCEntry, :text, String)
-
-            if length(baseCaseList) == 0
-                push!(baseCaseList, (length(baseCaseList)+1, nameBC, "Incomplete", "Incomplete", "Incomplete"))
-                set_gtk_property!(clearBC, :sensitive, true)
-                set_gtk_property!(deleteBC, :sensitive, true)
-                set_gtk_property!(editBC, :sensitive, true)
-                set_gtk_property!(saveToolbar, :sensitive, true)
-                set_gtk_property!(pdfToolbar, :sensitive, true)
-                global idxBC += 1
-                destroy(addBCWin)
-            else
-                t = zeros(1, length(baseCaseList))
-                for i=1:length(baseCaseList)
-                    t[i] = nameBC == baseCaseList[i,2]
-                end
-
-                if sum(t) == 1
-                    wmgs1 = warn_dialog("Name for base case design is already in use!", addBCWin)
-                    set_gtk_property!(newBCEntry, :text, baseCaseEntryLabel)
-                else
-                    push!(baseCaseList, (length(baseCaseList)+1, nameBC, "Incomplete", "Incomplete", "Incomplete"))
-                    set_gtk_property!(clearBC, :sensitive, true)
-                    set_gtk_property!(deleteBC, :sensitive, true)
-                    set_gtk_property!(editBC, :sensitive, true)
-                    set_gtk_property!(saveToolbar, :sensitive, true)
-                    set_gtk_property!(pdfToolbar, :sensitive, true)
-                    global idxBC += 1
-                    destroy(addBCWin)
-                end
-            end
+        if length(baseCaseList) == 0
+            push!(baseCaseList, (length(baseCaseList) + 1, baseCaseName, "Incomplete", "Incomplete", "Incomplete"))
+            set_gtk_property!(clearBC, :sensitive, true)
+            set_gtk_property!(deleteBC, :sensitive, true)
+            set_gtk_property!(saveToolbar, :sensitive, true)
+            set_gtk_property!(pdfToolbar, :sensitive, true)
+            set_gtk_property!(addEq, :sensitive, true)
+            global idxBC += 1
+            global idxEq = zeros(1, idxBC)
+        else
+            t = zeros(1, length(baseCaseList))
+            push!(baseCaseList, (length(baseCaseList) + 1, baseCaseName, "Incomplete", "Incomplete", "Incomplete"))
+            set_gtk_property!(clearBC, :sensitive, true)
+            set_gtk_property!(deleteBC, :sensitive, true)
+            set_gtk_property!(saveToolbar, :sensitive, true)
+            set_gtk_property!(pdfToolbar, :sensitive, true)
+            set_gtk_property!(addEq, :sensitive, true)
+            global idxBC += 1
+            global idxEq = zeros(1, idxBC)
         end
-
-        signal_connect(addBCWin, "key-press-event") do widget, event
-            if event.keyval == 65293
-                nameBC = get_gtk_property(newBCEntry, :text, String)
-
-                if length(baseCaseList) == 0
-                    push!(baseCaseList, (length(baseCaseList)+1, nameBC, "Incomplete", "Incomplete", "Incomplete"))
-                    set_gtk_property!(clearBC, :sensitive, true)
-                    set_gtk_property!(deleteBC, :sensitive, true)
-                    set_gtk_property!(editBC, :sensitive, true)
-                    set_gtk_property!(saveToolbar, :sensitive, true)
-                    set_gtk_property!(pdfToolbar, :sensitive, true)
-                    global idxBC += 1
-                    destroy(addBCWin)
-                else
-                    t = zeros(1, length(baseCaseList))
-                    for i=1:length(baseCaseList)
-                        t[i] = nameBC == baseCaseList[i,2]
-                    end
-
-                    if sum(t) == 1
-                        wmgs1 = warn_dialog("Name for base case design is already in use!", addBCWin)
-                        set_gtk_property!(newBCEntry, :text, baseCaseEntryLabel)
-                    else
-                        push!(baseCaseList, (length(baseCaseList)+1, nameBC, "Incomplete", "Incomplete", "Incomplete"))
-                        set_gtk_property!(clearBC, :sensitive, true)
-                        set_gtk_property!(deleteBC, :sensitive, true)
-                        set_gtk_property!(editBC, :sensitive, true)
-                        set_gtk_property!(saveToolbar, :sensitive, true)
-                        set_gtk_property!(pdfToolbar, :sensitive, true)
-                        global idxBC += 1
-                        destroy(addBCWin)
-                    end
-                end
-            end
-        end
-        newBCClose = Button("Close")
-        signal_connect(newBCClose, :clicked) do widget
-            destroy(addBCWin)
-        end
-        addBCGrid[1:2, 1] = newBCLabel
-        addBCGrid[1:2, 2] = newBCEntry
-        addBCGrid[1, 3] = newBCAdd
-        addBCGrid[2, 3] = newBCClose
-
-        push!(addBCFrame, addBCGrid)
-        push!(addBCMainGrid, addBCFrame)
-        push!(addBCWin, addBCMainGrid)
-        Gtk.showall(addBCWin)
     end
-
-    editBC = Button("Edit")
-    set_gtk_property!(editBC, :width_request, (wBC - 5*10)/4)
-    set_gtk_property!(editBC, :sensitive, false)
 
     deleteBC = Button("Delete")
     set_gtk_property!(deleteBC, :width_request, (wBC - 5*10)/4)
@@ -367,10 +284,11 @@ function mainPI()
                 global idxBC = 1
                 set_gtk_property!(clearBC, :sensitive, false)
                 set_gtk_property!(deleteBC, :sensitive, false)
-                set_gtk_property!(editBC, :sensitive, false)
                 set_gtk_property!(saveToolbar, :sensitive, false)
                 set_gtk_property!(pdfToolbar, :sensitive, false)
+                set_gtk_property!(addEq, :sensitive, false)
             end
+            global idxEq = zeros(1, idxBC)
         end
     end
 
@@ -381,20 +299,53 @@ function mainPI()
         empty!(baseCaseList)
         set_gtk_property!(clearBC, :sensitive, false)
         set_gtk_property!(deleteBC, :sensitive, false)
-        set_gtk_property!(editBC, :sensitive, false)
         set_gtk_property!(saveToolbar, :sensitive, false)
         set_gtk_property!(pdfToolbar, :sensitive, false)
+        set_gtk_property!(addEq, :sensitive, false)
         global idxBC = 1
     end
 
     baseCaseGrid[1, 2] = addBC
-    baseCaseGrid[2, 2] = editBC
-    baseCaseGrid[3, 2] = deleteBC
-    baseCaseGrid[4, 2] = clearBC
+    baseCaseGrid[2, 2] = deleteBC
+    baseCaseGrid[3, 2] = clearBC
 
     push!(baseCaseFrame, baseCaseGrid)
 
     ####################################################################################################################
+    # Equipments
+    ####################################################################################################################
+    global listEquipments = DataFrames.DataFrame(ID = Float64[], Name = String[], Phenomena = Array[])
+
+    # Add avilable aquipments and phenomenas
+    push!(listEquipments, (1, "Batch Reactor", ["M" "R" "H/C"]))
+    push!(listEquipments, (2, "Semi-Batch Reactor", ["M" "R" "H/C"]))
+    push!(listEquipments, (3, "CSTR Reactor", ["M" "R" "H/C"]))
+    push!(listEquipments, (4, "PFR Reactor", ["M" "R" "H/C"]))
+    push!(listEquipments, (5, "Pack-Bed Reactor", ["M" "R" "H/C"]))
+    push!(listEquipments, (6, "Flash Column", ["2phM", "PC", "PT", "PS"]))
+    push!(listEquipments, (7, "Distillation Column", ["2phM", "H/C", "PC", "PT", "PS"]))
+    push!(listEquipments, (8, "Azeotropic Column", ["2phM", "H/C", "PC", "PT", "PS"]))
+    push!(listEquipments, (9, "Extractive Column", ["2phM", "H/C", "PC", "PT", "PS"]))
+    push!(listEquipments, (10, "Absorption Column", ["2phM", "H/C", "PC", "PT", "PS"]))
+    push!(listEquipments, (11, "Stripping Column", ["2phM", "H", "PC", "PT", "PS"]))
+    push!(listEquipments, (12, "Crystallization", ["2phM", "C", "PC", "PT", "PS"]))
+    push!(listEquipments, (13, "Liquid-Liquid Extraction", ["M", " PC", "PS"]))
+    push!(listEquipments, (14, "Membrane Pervaporation", ["2phM", "H/C", "PC", "PT", "PS"]))
+    push!(listEquipments, (15, "Membrane Reactor", ["2phM", "R", "H/C", "PC", "PT", "PS"]))
+    push!(listEquipments, (16, "Reactive Distillation", ["2phM", "R", "H/C", "PC", "PT", "PS"]))
+    push!(listEquipments, (17, "Divided Wall Column", ["2phM", "H/C", "PC", "PT", "PS"]))
+    push!(listEquipments, (18, "Reactive Divided Wall Column", ["2phM", "R", "H/C", "PC", "PT", "PS"]))
+    push!(listEquipments, (19, "Azeotropic Column with Reaction", ["2phM", "R", "H/C", "PC", "PT", "PS"]))
+    push!(listEquipments, (20, "Azeotropic Divided Wall Column", ["2phM", "H/C", "PC", "PT", "PS"]))
+    push!(listEquipments, (21, "Azeotropic Divided Wall Column with Reaction", ["2phM", "R", "H/C", "PC", "PT", "PS"]))
+    push!(listEquipments, (22, "Extractive Column with Reaction", ["2phM", "R", "H/C", "PC", "PT", "PS"]))
+    push!(listEquipments, (23, "Extractive Divided Wall Column", ["2phM", "H/C", "PC", "PT", "PS"]))
+    push!(listEquipments, (24, "Extractive Divided Wall Column with Reaction", ["2phM", "R", "H/C", "PC", "PT", "PS"]))
+    push!(listEquipments, (25, "Absorption Column witn Reaction", ["2phM", "R", "H/C", "PC", "PT", "PS"]))
+    push!(listEquipments, (26, "Stripping Column with Reaction", ["2phM", "H", "PC", "PT", "PS"]))
+    push!(listEquipments, (27, "Liquid-Liquid Extraction with Reaction", ["M", "R", "PC", "PS"]))
+    push!(listEquipments, (28, "Reactive Crystallization", ["2phM", "R", "C", "PC", "PT", "PS"]))
+
     equipmentFrame = Frame(" Equipments ")
     set_gtk_property!(equipmentFrame, :height_request, (hNb - 30)/2)
     set_gtk_property!(equipmentFrame, :width_request, (h / 2) - 15)
@@ -443,16 +394,12 @@ function mainPI()
     push!(equipmentTreeView, c1, c2, c3, c4)
     push!(equipmentScroll, equipmentTreeView)
 
-    equipmentGrid[1:4, 1] = equipmentFrameTree
+    equipmentGrid[1:3, 1] = equipmentFrameTree
 
     # Buttons for base case design
     addEq = Button("Add")
     set_gtk_property!(addEq, :width_request, (wBC - 5*10)/4)
     set_gtk_property!(addEq, :sensitive, false)
-
-    editEq = Button("Edit")
-    set_gtk_property!(editEq, :width_request, (wBC - 5*10)/4)
-    set_gtk_property!(editEq, :sensitive, false)
 
     deleteEq = Button("Delete")
     set_gtk_property!(deleteEq, :width_request, (wBC - 5*10)/4)
@@ -463,9 +410,8 @@ function mainPI()
     set_gtk_property!(clearEq, :sensitive, false)
 
     equipmentGrid[1, 2] = addEq
-    equipmentGrid[2, 2] = editEq
-    equipmentGrid[3, 2] = deleteEq
-    equipmentGrid[4, 2] = clearEq
+    equipmentGrid[2, 2] = deleteEq
+    equipmentGrid[3, 2] = clearEq
 
     push!(equipmentFrame, equipmentGrid)
 
