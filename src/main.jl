@@ -199,6 +199,7 @@ function mainPI()
     baseCaseTreeView = TreeView(TreeModel(baseCaseList))
     set_gtk_property!(baseCaseTreeView, :reorderable, true)
     set_gtk_property!(baseCaseTreeView, :enable_grid_lines, 3)
+    set_gtk_property!(baseCaseTreeView, :activate_on_single_click, true)
     selBC = Gtk.GAccessor.selection(baseCaseTreeView)
     selBC = Gtk.GAccessor.mode(selBC, Gtk.GConstants.GtkSelectionMode.SINGLE)
 
@@ -219,16 +220,26 @@ function mainPI()
     signal_connect(renderTxt1, "edited") do widget, path, text
         idxTree = parse(Int, path)
 
-        t = zeros(1, length(baseCaseList))
-        for i=1:length(baseCaseList)
-            t[i] = text == baseCaseList[i,2]
-        end
+        if baseCaseList[idxTree + 1, 2] != text
+            t = zeros(1, length(baseCaseList))
+            for i=1:length(baseCaseList)
+                t[i] = text == baseCaseList[i,2]
+            end
 
-        if sum(t) == 1
-            warn_dialog("Name for base case design is already in use!", mainPIWin)
-        else
-            baseCaseList[idxTree + 1, 2] = text
+            if sum(t) == 1
+                warn_dialog("Name for base case design is already in use!", mainPIWin)
+            else
+                baseCaseList[idxTree + 1, 2] = text
+                currentID = selected(selmodelBaseCase)
+                set_gtk_property!(equipmentFrame, :label, " Equipments for $(baseCaseList[currentID, 2]) ")
+            end
         end
+    end
+
+    signal_connect(baseCaseTreeView, :row_activated) do widget, path, column
+        currentID = selected(selmodelBaseCase)
+        set_gtk_property!(equipmentFrame, :label, " Equipments for $(baseCaseList[currentID, 2]) ")
+        set_gtk_property!(addEq, :sensitive, true)
     end
 
     # Allows to select rows
@@ -256,7 +267,6 @@ function mainPI()
             set_gtk_property!(deleteBC, :sensitive, true)
             set_gtk_property!(saveToolbar, :sensitive, true)
             set_gtk_property!(pdfToolbar, :sensitive, true)
-            set_gtk_property!(addEq, :sensitive, true)
             global idxBC += 1
             global idxEq = zeros(1, idxBC)
         else
@@ -266,7 +276,6 @@ function mainPI()
             set_gtk_property!(deleteBC, :sensitive, true)
             set_gtk_property!(saveToolbar, :sensitive, true)
             set_gtk_property!(pdfToolbar, :sensitive, true)
-            set_gtk_property!(addEq, :sensitive, true)
             global idxBC += 1
             global idxEq = zeros(1, idxBC)
         end
@@ -287,6 +296,7 @@ function mainPI()
                 set_gtk_property!(saveToolbar, :sensitive, false)
                 set_gtk_property!(pdfToolbar, :sensitive, false)
                 set_gtk_property!(addEq, :sensitive, false)
+                set_gtk_property!(equipmentFrame, :label, " Equipments ")
             end
             global idxEq = zeros(1, idxBC)
         end
@@ -302,6 +312,7 @@ function mainPI()
         set_gtk_property!(saveToolbar, :sensitive, false)
         set_gtk_property!(pdfToolbar, :sensitive, false)
         set_gtk_property!(addEq, :sensitive, false)
+        set_gtk_property!(equipmentFrame, :label, " Equipments ")
         global idxBC = 1
     end
 
@@ -314,37 +325,37 @@ function mainPI()
     ####################################################################################################################
     # Equipments
     ####################################################################################################################
-    global listEquipments = DataFrames.DataFrame(ID = Float64[], Name = String[], Phenomena = Array[])
+    global listEqPhenomena = DataFrames.DataFrame(ID = Float64[], Name = String[], Phenomena = Array[])
 
     # Add avilable aquipments and phenomenas
-    push!(listEquipments, (1, "Batch Reactor", ["M" "R" "H/C"]))
-    push!(listEquipments, (2, "Semi-Batch Reactor", ["M" "R" "H/C"]))
-    push!(listEquipments, (3, "CSTR Reactor", ["M" "R" "H/C"]))
-    push!(listEquipments, (4, "PFR Reactor", ["M" "R" "H/C"]))
-    push!(listEquipments, (5, "Pack-Bed Reactor", ["M" "R" "H/C"]))
-    push!(listEquipments, (6, "Flash Column", ["2phM", "PC", "PT", "PS"]))
-    push!(listEquipments, (7, "Distillation Column", ["2phM", "H/C", "PC", "PT", "PS"]))
-    push!(listEquipments, (8, "Azeotropic Column", ["2phM", "H/C", "PC", "PT", "PS"]))
-    push!(listEquipments, (9, "Extractive Column", ["2phM", "H/C", "PC", "PT", "PS"]))
-    push!(listEquipments, (10, "Absorption Column", ["2phM", "H/C", "PC", "PT", "PS"]))
-    push!(listEquipments, (11, "Stripping Column", ["2phM", "H", "PC", "PT", "PS"]))
-    push!(listEquipments, (12, "Crystallization", ["2phM", "C", "PC", "PT", "PS"]))
-    push!(listEquipments, (13, "Liquid-Liquid Extraction", ["M", " PC", "PS"]))
-    push!(listEquipments, (14, "Membrane Pervaporation", ["2phM", "H/C", "PC", "PT", "PS"]))
-    push!(listEquipments, (15, "Membrane Reactor", ["2phM", "R", "H/C", "PC", "PT", "PS"]))
-    push!(listEquipments, (16, "Reactive Distillation", ["2phM", "R", "H/C", "PC", "PT", "PS"]))
-    push!(listEquipments, (17, "Divided Wall Column", ["2phM", "H/C", "PC", "PT", "PS"]))
-    push!(listEquipments, (18, "Reactive Divided Wall Column", ["2phM", "R", "H/C", "PC", "PT", "PS"]))
-    push!(listEquipments, (19, "Azeotropic Column with Reaction", ["2phM", "R", "H/C", "PC", "PT", "PS"]))
-    push!(listEquipments, (20, "Azeotropic Divided Wall Column", ["2phM", "H/C", "PC", "PT", "PS"]))
-    push!(listEquipments, (21, "Azeotropic Divided Wall Column with Reaction", ["2phM", "R", "H/C", "PC", "PT", "PS"]))
-    push!(listEquipments, (22, "Extractive Column with Reaction", ["2phM", "R", "H/C", "PC", "PT", "PS"]))
-    push!(listEquipments, (23, "Extractive Divided Wall Column", ["2phM", "H/C", "PC", "PT", "PS"]))
-    push!(listEquipments, (24, "Extractive Divided Wall Column with Reaction", ["2phM", "R", "H/C", "PC", "PT", "PS"]))
-    push!(listEquipments, (25, "Absorption Column witn Reaction", ["2phM", "R", "H/C", "PC", "PT", "PS"]))
-    push!(listEquipments, (26, "Stripping Column with Reaction", ["2phM", "H", "PC", "PT", "PS"]))
-    push!(listEquipments, (27, "Liquid-Liquid Extraction with Reaction", ["M", "R", "PC", "PS"]))
-    push!(listEquipments, (28, "Reactive Crystallization", ["2phM", "R", "C", "PC", "PT", "PS"]))
+    push!(listEqPhenomena, (1, "Batch Reactor", ["M" "R" "H/C"]))
+    push!(listEqPhenomena, (2, "Semi-Batch Reactor", ["M" "R" "H/C"]))
+    push!(listEqPhenomena, (3, "CSTR Reactor", ["M" "R" "H/C"]))
+    push!(listEqPhenomena, (4, "PFR Reactor", ["M" "R" "H/C"]))
+    push!(listEqPhenomena, (5, "Pack-Bed Reactor", ["M" "R" "H/C"]))
+    push!(listEqPhenomena, (6, "Flash Column", ["2phM", "PC", "PT", "PS"]))
+    push!(listEqPhenomena, (7, "Distillation Column", ["2phM", "H/C", "PC", "PT", "PS"]))
+    push!(listEqPhenomena, (8, "Azeotropic Column", ["2phM", "H/C", "PC", "PT", "PS"]))
+    push!(listEqPhenomena, (9, "Extractive Column", ["2phM", "H/C", "PC", "PT", "PS"]))
+    push!(listEqPhenomena, (10, "Absorption Column", ["2phM", "H/C", "PC", "PT", "PS"]))
+    push!(listEqPhenomena, (11, "Stripping Column", ["2phM", "H", "PC", "PT", "PS"]))
+    push!(listEqPhenomena, (12, "Crystallization", ["2phM", "C", "PC", "PT", "PS"]))
+    push!(listEqPhenomena, (13, "Liquid-Liquid Extraction", ["M", " PC", "PS"]))
+    push!(listEqPhenomena, (14, "Membrane Pervaporation", ["2phM", "H/C", "PC", "PT", "PS"]))
+    push!(listEqPhenomena, (15, "Membrane Reactor", ["2phM", "R", "H/C", "PC", "PT", "PS"]))
+    push!(listEqPhenomena, (16, "Reactive Distillation", ["2phM", "R", "H/C", "PC", "PT", "PS"]))
+    push!(listEqPhenomena, (17, "Divided Wall Column", ["2phM", "H/C", "PC", "PT", "PS"]))
+    push!(listEqPhenomena, (18, "Reactive Divided Wall Column", ["2phM", "R", "H/C", "PC", "PT", "PS"]))
+    push!(listEqPhenomena, (19, "Azeotropic Column with Reaction", ["2phM", "R", "H/C", "PC", "PT", "PS"]))
+    push!(listEqPhenomena, (20, "Azeotropic Divided Wall Column", ["2phM", "H/C", "PC", "PT", "PS"]))
+    push!(listEqPhenomena, (21, "Azeotropic Divided Wall Column with Reaction", ["2phM", "R", "H/C", "PC", "PT", "PS"]))
+    push!(listEqPhenomena, (22, "Extractive Column with Reaction", ["2phM", "R", "H/C", "PC", "PT", "PS"]))
+    push!(listEqPhenomena, (23, "Extractive Divided Wall Column", ["2phM", "H/C", "PC", "PT", "PS"]))
+    push!(listEqPhenomena, (24, "Extractive Divided Wall Column with Reaction", ["2phM", "R", "H/C", "PC", "PT", "PS"]))
+    push!(listEqPhenomena, (25, "Absorption Column witn Reaction", ["2phM", "R", "H/C", "PC", "PT", "PS"]))
+    push!(listEqPhenomena, (26, "Stripping Column with Reaction", ["2phM", "H", "PC", "PT", "PS"]))
+    push!(listEqPhenomena, (27, "Liquid-Liquid Extraction with Reaction", ["M", "R", "PC", "PS"]))
+    push!(listEqPhenomena, (28, "Reactive Crystallization", ["2phM", "R", "C", "PC", "PT", "PS"]))
 
     equipmentFrame = Frame(" Equipments ")
     set_gtk_property!(equipmentFrame, :height_request, (hNb - 30)/2)
@@ -378,40 +389,85 @@ function mainPI()
     # Set selectable
     selmodelequipment = G_.selection(equipmentTreeView)
 
-    renderTxt = CellRendererText()
-    set_gtk_property!(renderTxt, :editable, true)
+    renderTxt3 = CellRendererText()
+    renderTxt4 = CellRendererText()
+    set_gtk_property!(renderTxt3, :editable, true)
+    set_gtk_property!(renderTxt4, :editable, false)
 
-    c1 = TreeViewColumn("ID", renderTxt, Dict([("text", 0)]))
-    c2 = TreeViewColumn("Name", renderTxt, Dict([("text", 1)]))
-    c3 = TreeViewColumn("Equipment", renderTxt, Dict([("text", 2)]))
-    c4 = TreeViewColumn("Phenomena", renderTxt, Dict([("text", 3)]))
+    c1 = TreeViewColumn("ID", renderTxt3, Dict([("text", 0)]))
+    c2 = TreeViewColumn("Equipment", renderTxt4, Dict([("text", 1)]))
+    c3 = TreeViewColumn("Phenomena", renderTxt4, Dict([("text", 2)]))
 
     # Allows to select rows
-    for c in [c1, c2, c3, c4]
+    for c in [c1, c2, c3]
         Gtk.GAccessor.resizable(c, true)
     end
 
-    push!(equipmentTreeView, c1, c2, c3, c4)
+    push!(equipmentTreeView, c1, c2, c3)
     push!(equipmentScroll, equipmentTreeView)
 
-    equipmentGrid[1:3, 1] = equipmentFrameTree
+    equipmentGrid[1:4, 1] = equipmentFrameTree
+
+    # Edited
+    signal_connect(renderTxt3, "edited") do widget, path, text
+        idxTreeEq = parse(Int, path) + 1
+        idxIDEq = parse(Int, text)
+
+        if idxIDEq >= 1 && idxIDEq <= 28
+            println(idxTreeEq)
+            println(idxIDEq)
+            equipmentList[idxTreeEq, 1] = text
+            equipmentList[idxTreeEq, 2] = listEqPhenomena[idxIDEq, 2]
+            equipmentList[idxTreeEq, 3] = string(listEqPhenomena[idxIDEq, 3])
+        else
+            warn_dialog("No equipment specified for option $(idxIDEq), see Help", mainPIWin)
+        end
+    end
 
     # Buttons for base case design
     addEq = Button("Add")
     set_gtk_property!(addEq, :width_request, (wBC - 5*10)/4)
     set_gtk_property!(addEq, :sensitive, false)
+    signal_connect(addEq, :clicked) do widget
+         push!(equipmentList, ("not specified", "not specified", "not specified", "not specified"))
+         set_gtk_property!(clearEq, :sensitive, true)
+         set_gtk_property!(deleteEq, :sensitive, true)
+    end
 
     deleteEq = Button("Delete")
     set_gtk_property!(deleteEq, :width_request, (wBC - 5*10)/4)
     set_gtk_property!(deleteEq, :sensitive, false)
+    signal_connect(deleteEq, :clicked) do widget
+        if hasselection(selmodelequipment)
+            currentID = selected(selmodelequipment)
+            deleteat!(equipmentList, currentID)
+
+            if length(equipmentList)==0
+                set_gtk_property!(deleteEq, :sensitive, false)
+                set_gtk_property!(clearEq, :sensitive, false)
+                set_gtk_property!(equipmentFrame, :label, " Equipments ")
+            end
+        end
+    end
 
     clearEq = Button("Clear")
     set_gtk_property!(clearEq, :width_request, (wBC - 5*10)/4)
     set_gtk_property!(clearEq, :sensitive, false)
+    signal_connect(clearEq, :clicked) do widget
+        empty!(equipmentList)
+        set_gtk_property!(clearEq, :sensitive, false)
+        set_gtk_property!(deleteEq, :sensitive, false)
+        set_gtk_property!(equipmentFrame, :label, " Equipments ")
+    end
+
+    helpEq = Button("Help")
+    set_gtk_property!(helpEq, :width_request, (wBC - 5*10)/4)
+    set_gtk_property!(helpEq, :sensitive, true)
 
     equipmentGrid[1, 2] = addEq
     equipmentGrid[2, 2] = deleteEq
     equipmentGrid[3, 2] = clearEq
+    equipmentGrid[4, 2] = helpEq
 
     push!(equipmentFrame, equipmentGrid)
 
