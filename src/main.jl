@@ -170,6 +170,7 @@ function mainPI()
     ####################################################################################################################
     global idxBC = 1
     global idxEq = zeros(1, idxBC)
+    global dictBC = Dict()
 
     baseCaseFrame = Frame(" Base Case Design ")
     set_gtk_property!(baseCaseFrame, :height_request, (hNb - 30)/2)
@@ -267,6 +268,7 @@ function mainPI()
             set_gtk_property!(deleteBC, :sensitive, true)
             set_gtk_property!(saveToolbar, :sensitive, true)
             set_gtk_property!(pdfToolbar, :sensitive, true)
+            dictBC["$(baseCaseName)"] = []
             global idxBC += 1
             global idxEq = zeros(1, idxBC)
         else
@@ -276,6 +278,7 @@ function mainPI()
             set_gtk_property!(deleteBC, :sensitive, true)
             set_gtk_property!(saveToolbar, :sensitive, true)
             set_gtk_property!(pdfToolbar, :sensitive, true)
+            dictBC["$(baseCaseName)"] = []
             global idxBC += 1
             global idxEq = zeros(1, idxBC)
         end
@@ -287,7 +290,13 @@ function mainPI()
     signal_connect(deleteBC, :clicked) do widget
         if hasselection(selBC)
             currentID = selected(selBC)
+            delete!(dictBC, baseCaseList[currentID, 2])
             deleteat!(baseCaseList, currentID)
+
+            if length(baseCaseList) > 0
+                newidxBC = Gtk.index_from_iter(baseCaseList, selected(selBC))
+                set_gtk_property!(equipmentFrame, :label, " Equipments for $(baseCaseList[newidxBC, 2]) ")
+            end
 
             if length(baseCaseList)==0
                 global idxBC = 1
@@ -297,6 +306,7 @@ function mainPI()
                 set_gtk_property!(pdfToolbar, :sensitive, false)
                 set_gtk_property!(addEq, :sensitive, false)
                 set_gtk_property!(equipmentFrame, :label, " Equipments ")
+                empty!(equipmentList)
             end
             global idxEq = zeros(1, idxBC)
         end
@@ -307,12 +317,14 @@ function mainPI()
     set_gtk_property!(clearBC, :sensitive, false)
     signal_connect(clearBC, :clicked) do widget
         empty!(baseCaseList)
+        empty!(equipmentList)
         set_gtk_property!(clearBC, :sensitive, false)
         set_gtk_property!(deleteBC, :sensitive, false)
         set_gtk_property!(saveToolbar, :sensitive, false)
         set_gtk_property!(pdfToolbar, :sensitive, false)
         set_gtk_property!(addEq, :sensitive, false)
         set_gtk_property!(equipmentFrame, :label, " Equipments ")
+        global dictBC = Dict()
         global idxBC = 1
     end
 
@@ -414,8 +426,6 @@ function mainPI()
         idxIDEq = parse(Int, text)
 
         if idxIDEq >= 1 && idxIDEq <= 28
-            println(idxTreeEq)
-            println(idxIDEq)
             equipmentList[idxTreeEq, 1] = text
             equipmentList[idxTreeEq, 2] = listEqPhenomena[idxIDEq, 2]
             equipmentList[idxTreeEq, 3] = string(listEqPhenomena[idxIDEq, 3])
@@ -432,6 +442,10 @@ function mainPI()
          push!(equipmentList, ("not specified", "not specified", "not specified", "not specified"))
          set_gtk_property!(clearEq, :sensitive, true)
          set_gtk_property!(deleteEq, :sensitive, true)
+
+         newidxBC = Gtk.index_from_iter(baseCaseList, selected(selBC))
+         push!(dictBC["$(baseCaseList[newidxBC,2])"], ("not specified", "not specified", "not specified", "not specified"))
+         println(dictBC)
     end
 
     deleteEq = Button("Delete")
