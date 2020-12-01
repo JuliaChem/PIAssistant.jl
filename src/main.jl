@@ -320,6 +320,7 @@ function mainPI()
             delete!(dictBC, baseCaseList[currentID, 2])
             delete!(dictEq, baseCaseList[currentID, 2])
             deleteat!(baseCaseList, currentID)
+            empty!(equipmentList)
 
             if length(baseCaseList) > 0
                 newidxBC = Gtk.index_from_iter(baseCaseList, selected(selBC))
@@ -461,6 +462,16 @@ function mainPI()
             equipmentList[idxTreeEq, 1] = text
             equipmentList[idxTreeEq, 2] = listEqPhenomena[idxIDEq, 2]
             equipmentList[idxTreeEq, 3] = string(listEqPhenomena[idxIDEq, 3])
+
+            newidxBC = Gtk.index_from_iter(baseCaseList, selected(selBC))
+            dictEq["$(baseCaseList[newidxBC,2])"] = []
+
+            for i = 1:length(equipmentList)
+                push!(
+                    dictEq["$(baseCaseList[newidxBC,2])"],
+                    (equipmentList[i, 1], equipmentList[i, 2], equipmentList[i, 3]),
+                    )
+            end
         else
             warn_dialog("No equipment specified for option $(idxIDEq), see Help", mainPIWin)
         end
@@ -512,7 +523,6 @@ function mainPI()
         empty!(equipmentList)
         set_gtk_property!(clearEq, :sensitive, false)
         set_gtk_property!(deleteEq, :sensitive, false)
-        set_gtk_property!(equipmentFrame, :label, " Equipments ")
     end
 
     helpEq = Button("Help")
