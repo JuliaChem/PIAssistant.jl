@@ -230,8 +230,10 @@ function mainPI()
             if sum(t) == 1
                 warn_dialog("Name for base case design is already in use!", mainPIWin)
             else
-                baseCaseList[idxTree + 1, 2] = text
                 currentID = selected(selmodelBaseCase)
+                dictBC["$(text)"] = pop!(dictBC, "$(baseCaseList[currentID, 2])")
+                dictEq["$(text)"] = pop!(dictEq, "$(baseCaseList[currentID, 2])")
+                baseCaseList[idxTree + 1, 2] = text
                 set_gtk_property!(equipmentFrame, :label, " Equipments for $(baseCaseList[currentID, 2]) ")
             end
         end
@@ -241,6 +243,27 @@ function mainPI()
         currentID = selected(selmodelBaseCase)
         set_gtk_property!(equipmentFrame, :label, " Equipments for $(baseCaseList[currentID, 2]) ")
         set_gtk_property!(addEq, :sensitive, true)
+        empty!(equipmentList)
+
+        newSel = length(dictEq["$(baseCaseList[currentID, 2])"])
+        if newSel != 0
+            set_gtk_property!(clearEq, :sensitive, true)
+            set_gtk_property!(deleteEq, :sensitive, true)
+        else
+            set_gtk_property!(clearEq, :sensitive, false)
+            set_gtk_property!(deleteEq, :sensitive, false)
+        end
+
+        for i = 1:newSel
+            push!(
+                equipmentList,
+                (
+                dictEq["$(baseCaseList[currentID, 2])"][i][1],
+                dictEq["$(baseCaseList[currentID, 2])"][i][2],
+                dictEq["$(baseCaseList[currentID, 2])"][i][3],
+                ),
+            )
+        end
     end
 
     # Allows to select rows
@@ -269,6 +292,8 @@ function mainPI()
             set_gtk_property!(saveToolbar, :sensitive, true)
             set_gtk_property!(pdfToolbar, :sensitive, true)
             dictBC["$(baseCaseName)"] = []
+            dictEq["$(baseCaseName)"] = []
+            println(dictBC)
             global idxBC += 1
             global idxEq = zeros(1, idxBC)
         else
@@ -279,6 +304,8 @@ function mainPI()
             set_gtk_property!(saveToolbar, :sensitive, true)
             set_gtk_property!(pdfToolbar, :sensitive, true)
             dictBC["$(baseCaseName)"] = []
+            dictEq["$(baseCaseName)"] = []
+            println(dictBC)
             global idxBC += 1
             global idxEq = zeros(1, idxBC)
         end
@@ -291,6 +318,7 @@ function mainPI()
         if hasselection(selBC)
             currentID = selected(selBC)
             delete!(dictBC, baseCaseList[currentID, 2])
+            delete!(dictEq, baseCaseList[currentID, 2])
             deleteat!(baseCaseList, currentID)
 
             if length(baseCaseList) > 0
@@ -305,6 +333,7 @@ function mainPI()
                 set_gtk_property!(saveToolbar, :sensitive, false)
                 set_gtk_property!(pdfToolbar, :sensitive, false)
                 set_gtk_property!(addEq, :sensitive, false)
+                set_gtk_property!(clearEq, :sensitive, false)
                 set_gtk_property!(equipmentFrame, :label, " Equipments ")
                 empty!(equipmentList)
             end
@@ -319,12 +348,14 @@ function mainPI()
         empty!(baseCaseList)
         empty!(equipmentList)
         set_gtk_property!(clearBC, :sensitive, false)
+        set_gtk_property!(clearEq, :sensitive, false)
         set_gtk_property!(deleteBC, :sensitive, false)
         set_gtk_property!(saveToolbar, :sensitive, false)
         set_gtk_property!(pdfToolbar, :sensitive, false)
         set_gtk_property!(addEq, :sensitive, false)
         set_gtk_property!(equipmentFrame, :label, " Equipments ")
         global dictBC = Dict()
+        global dictEq = Dict()
         global idxBC = 1
     end
 
@@ -338,6 +369,7 @@ function mainPI()
     # Equipments
     ####################################################################################################################
     global listEqPhenomena = DataFrames.DataFrame(ID = Float64[], Name = String[], Phenomena = Array[])
+    global dictEq = Dict()
 
     # Add avilable aquipments and phenomenas
     push!(listEqPhenomena, (1, "Batch Reactor", ["M" "R" "H/C"]))
@@ -391,7 +423,7 @@ function mainPI()
     push!(equipmentFrameTree, equipmentScroll)
 
     # Table for Case Design
-    equipmentList = ListStore(String, String, String, String, String)
+    equipmentList = ListStore(String, String, String)
 
     # Visual Table for Case Design
     equipmentTreeView = TreeView(TreeModel(equipmentList))
@@ -439,13 +471,13 @@ function mainPI()
     set_gtk_property!(addEq, :width_request, (wBC - 5*10)/4)
     set_gtk_property!(addEq, :sensitive, false)
     signal_connect(addEq, :clicked) do widget
-         push!(equipmentList, ("not specified", "not specified", "not specified", "not specified"))
+         push!(equipmentList, ("not specified", "not specified", "not specified"))
          set_gtk_property!(clearEq, :sensitive, true)
          set_gtk_property!(deleteEq, :sensitive, true)
 
          newidxBC = Gtk.index_from_iter(baseCaseList, selected(selBC))
-         push!(dictBC["$(baseCaseList[newidxBC,2])"], ("not specified", "not specified", "not specified", "not specified"))
-         println(dictBC)
+         push!(dictEq["$(baseCaseList[newidxBC,2])"], ("not specified", "not specified", "not specified"))
+         println(dictEq)
     end
 
     deleteEq = Button("Delete")
@@ -454,7 +486,13 @@ function mainPI()
     signal_connect(deleteEq, :clicked) do widget
         if hasselection(selmodelequipment)
             currentID = selected(selmodelequipment)
+            newidxBC = Gtk.index_from_iter(equipmentList, selected(selmodelequipment))
+
             deleteat!(equipmentList, currentID)
+
+            currentIDBC = selected(selBC)
+            nameBCSel = baseCaseList[currentIDBC, 2]
+            dictEq[nameBCSel] = deleteat!(dictEq[nameBCSel], newidxBC)
 
             if length(equipmentList)==0
                 set_gtk_property!(deleteEq, :sensitive, false)
@@ -468,6 +506,9 @@ function mainPI()
     set_gtk_property!(clearEq, :width_request, (wBC - 5*10)/4)
     set_gtk_property!(clearEq, :sensitive, false)
     signal_connect(clearEq, :clicked) do widget
+        currentIDBC = selected(selBC)
+        nameBCSel = baseCaseList[currentIDBC, 2]
+        dictEq[nameBCSel] = []
         empty!(equipmentList)
         set_gtk_property!(clearEq, :sensitive, false)
         set_gtk_property!(deleteEq, :sensitive, false)
