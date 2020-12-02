@@ -160,10 +160,10 @@ function mainPI()
     set_gtk_property!(settingGrid, :margin_right, 10)
 
     settingGridLeft = Grid()
-    set_gtk_property!(settingGridLeft, :row_spacing, 10)
+    set_gtk_property!(settingGridLeft, :row_spacing, 5)
 
     settingGridRight = Grid()
-    set_gtk_property!(settingGridLeft, :row_spacing, 10)
+    set_gtk_property!(settingGridLeft, :row_spacing, 5)
 
     ####################################################################################################################
     # Base Case Design
@@ -293,7 +293,6 @@ function mainPI()
             set_gtk_property!(pdfToolbar, :sensitive, true)
             dictBC["$(baseCaseName)"] = []
             dictEq["$(baseCaseName)"] = []
-            println(dictBC)
             global idxBC += 1
             global idxEq = zeros(1, idxBC)
         else
@@ -305,7 +304,6 @@ function mainPI()
             set_gtk_property!(pdfToolbar, :sensitive, true)
             dictBC["$(baseCaseName)"] = []
             dictEq["$(baseCaseName)"] = []
-            println(dictBC)
             global idxBC += 1
             global idxEq = zeros(1, idxBC)
         end
@@ -413,7 +411,7 @@ function mainPI()
     set_gtk_property!(equipmentGrid, :margin_top, 5)
     set_gtk_property!(equipmentGrid, :margin_bottom, 10)
     set_gtk_property!(equipmentGrid, :margin_left, 10)
-    set_gtk_property!(baseCaseGrid, :margin_right, 10)
+    set_gtk_property!(equipmentGrid, :margin_right, 10)
 
     # TreeView for Base Case Design
     wBC = (h / 2) - 15
@@ -567,15 +565,100 @@ function mainPI()
     push!(equipmentFrame, equipmentGrid)
 
     ####################################################################################################################
-    settingFrameRigth = Frame("Intensification Criterion")
-    set_gtk_property!(settingFrameRigth, :height_request, hNb - 20)
-    set_gtk_property!(settingFrameRigth, :width_request, (h / 2) - 15)
-    set_gtk_property!(settingFrameRigth, :label_xalign, 0.50)
+    # Criterion
+    ####################################################################################################################
+    criterionFrame = Frame(" Criterion ")
+    set_gtk_property!(criterionFrame, :height_request, (hNb - 30)/2)
+    set_gtk_property!(criterionFrame, :width_request, (h / 2) - 15)
+    set_gtk_property!(criterionFrame, :label_xalign, 0.50)
+
+    criterionGrid = Grid()
+    set_gtk_property!(criterionGrid, :column_spacing, 10)
+    set_gtk_property!(criterionGrid, :row_spacing, 10)
+    set_gtk_property!(criterionGrid, :margin_top, 5)
+    set_gtk_property!(criterionGrid, :margin_bottom, 10)
+    set_gtk_property!(criterionGrid, :margin_left, 10)
+    set_gtk_property!(criterionGrid, :margin_right, 10)
+
+    # TreeView for Base Case Design
+    wBC = (h / 2) - 15
+    criterionFrameTree = Frame()
+    set_gtk_property!(criterionFrameTree, :height_request, (hNb - 30)/2 - 75)
+    set_gtk_property!(criterionFrameTree, :width_request, wBC - 20)
+    criterionScroll = ScrolledWindow()
+    push!(criterionFrameTree, criterionScroll)
+
+    # Table for Case Design
+    criterionList = ListStore(String, String, String)
+
+    # Visual Table for Case Design
+    criterionTreeView = TreeView(TreeModel(criterionList))
+    set_gtk_property!(criterionTreeView, :reorderable, true)
+    set_gtk_property!(criterionTreeView, :enable_grid_lines, 3)
+
+    # Set selectable
+    selmodelcriterion = G_.selection(criterionTreeView)
+
+    renderTxt5 = CellRendererText()
+    renderTxt6 = CellRendererText()
+    set_gtk_property!(renderTxt5, :editable, true)
+    set_gtk_property!(renderTxt6, :editable, false)
+
+    c1 = TreeViewColumn("ID", renderTxt5, Dict([("text", 0)]))
+    c2 = TreeViewColumn("Criterion", renderTxt6, Dict([("text", 1)]))
+    c3 = TreeViewColumn("Status", renderTxt6, Dict([("text", 2)]))
+
+    # Allows to select rows
+    for c in [c1, c2, c3]
+        Gtk.GAccessor.resizable(c, true)
+    end
+
+    push!(criterionTreeView, c1, c2, c3)
+    push!(criterionScroll, criterionTreeView)
+
+    criterionGrid[1:4, 1] = criterionFrameTree
+
+    # Edited
+    signal_connect(renderTxt5, "edited") do widget, path, text
+
+    end
+
+    # Buttons for base case design
+    addCr = Button("Add")
+    set_gtk_property!(addCr, :width_request, (wBC - 5*10)/4)
+    set_gtk_property!(addCr, :sensitive, false)
+    signal_connect(addCr, :clicked) do widget
+    end
+
+    deleteCr = Button("Delete")
+    set_gtk_property!(deleteCr, :width_request, (wBC - 5*10)/4)
+    set_gtk_property!(deleteCr, :sensitive, false)
+    signal_connect(deleteCr, :clicked) do widget
+
+    end
+
+    clearCr = Button("Clear")
+    set_gtk_property!(clearCr, :width_request, (wBC - 5*10)/4)
+    set_gtk_property!(clearCr, :sensitive, false)
+    signal_connect(clearCr, :clicked) do widget
+
+    end
+
+    helpCr = Button("Help")
+    set_gtk_property!(helpCr, :width_request, (wBC - 5*10)/4)
+    set_gtk_property!(helpCr, :sensitive, true)
+
+    criterionGrid[1, 2] = addCr
+    criterionGrid[2, 2] = deleteCr
+    criterionGrid[3, 2] = clearCr
+    criterionGrid[4, 2] = helpCr
+
+    push!(criterionFrame, criterionGrid)
 
     settingGridLeft[1, 1] = baseCaseFrame
     settingGridLeft[1, 2] = equipmentFrame
 
-    settingGridRight[1, 1] = settingFrameRigth
+    settingGridRight[1, 1] = criterionFrame
 
     settingGrid[1, 1] = settingGridLeft
     settingGrid[2, 1] = settingGridRight
