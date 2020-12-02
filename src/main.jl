@@ -163,7 +163,7 @@ function mainPI()
     set_gtk_property!(settingGridLeft, :row_spacing, 5)
 
     settingGridRight = Grid()
-    set_gtk_property!(settingGridLeft, :row_spacing, 5)
+    set_gtk_property!(settingGridRight, :row_spacing, 5)
 
     ####################################################################################################################
     # Base Case Design
@@ -655,10 +655,103 @@ function mainPI()
 
     push!(criterionFrame, criterionGrid)
 
+    ####################################################################################################################
+    # Criterion Settings
+    ####################################################################################################################
+    crSettFrame = Frame(" Settings Criterion ")
+    set_gtk_property!(crSettFrame, :height_request, (hNb - 30)/2)
+    set_gtk_property!(crSettFrame, :width_request, (h / 2) - 15)
+    set_gtk_property!(crSettFrame, :label_xalign, 0.50)
+
+    crSettGrid = Grid()
+    set_gtk_property!(crSettGrid, :column_spacing, 10)
+    set_gtk_property!(crSettGrid, :row_spacing, 10)
+    set_gtk_property!(crSettGrid, :margin_top, 5)
+    set_gtk_property!(crSettGrid, :margin_bottom, 10)
+    set_gtk_property!(crSettGrid, :margin_left, 10)
+    set_gtk_property!(crSettGrid, :margin_right, 10)
+
+    # TreeView for Base Case Design
+    wBC = (h / 2) - 15
+    crSettFrameTree = Frame()
+    set_gtk_property!(crSettFrameTree, :height_request, (hNb - 30)/2 - 75)
+    set_gtk_property!(crSettFrameTree, :width_request, wBC - 20)
+    crSettScroll = ScrolledWindow()
+    push!(crSettFrameTree, crSettScroll)
+
+    # Table for Case Design
+    crSettList = ListStore(String, String, String, String)
+
+    # Visual Table for Case Design
+    crSettTreeView = TreeView(TreeModel(crSettList))
+    set_gtk_property!(crSettTreeView, :reorderable, true)
+    set_gtk_property!(crSettTreeView, :enable_grid_lines, 3)
+
+    # Set selectable
+    selmodelcrSett = G_.selection(crSettTreeView)
+
+    renderTxt7 = CellRendererText()
+    renderTxt8 = CellRendererText()
+    set_gtk_property!(renderTxt7, :editable, true)
+    set_gtk_property!(renderTxt8, :editable, false)
+
+    c1 = TreeViewColumn("ID", renderTxt8, Dict([("text", 0)]))
+    c2 = TreeViewColumn("Equipment", renderTxt8, Dict([("text", 1)]))
+    c3 = TreeViewColumn("Value", renderTxt7, Dict([("text", 2)]))
+
+    # Allows to select rows
+    for c in [c1, c2, c3]
+        Gtk.GAccessor.resizable(c, true)
+    end
+
+    push!(crSettTreeView, c1, c2, c3)
+    push!(crSettScroll, crSettTreeView)
+
+    crSettGrid[1:4, 1] = crSettFrameTree
+
+    # Edited
+    signal_connect(renderTxt7, "edited") do widget, path, text
+
+    end
+
+    # Buttons for base case design
+    addCrSett = Button("Add")
+    set_gtk_property!(addCrSett, :width_request, (wBC - 5*10)/4)
+    set_gtk_property!(addCrSett, :sensitive, false)
+    signal_connect(addCrSett, :clicked) do widget
+    end
+
+    deleteCrSett = Button("Delete")
+    set_gtk_property!(deleteCrSett, :width_request, (wBC - 5*10)/4)
+    set_gtk_property!(deleteCrSett, :sensitive, false)
+    signal_connect(deleteCrSett, :clicked) do widget
+
+    end
+
+    clearCrSett = Button("Clear")
+    set_gtk_property!(clearCrSett, :width_request, (wBC - 5*10)/4)
+    set_gtk_property!(clearCrSett, :sensitive, false)
+    signal_connect(clearCrSett, :clicked) do widget
+
+    end
+
+    helpCrSett = Button("Help")
+    set_gtk_property!(helpCrSett, :width_request, (wBC - 5*10)/4)
+    set_gtk_property!(helpCrSett, :sensitive, true)
+
+    crSettGrid[1, 2] = addCrSett
+    crSettGrid[2, 2] = deleteCrSett
+    crSettGrid[3, 2] = clearCrSett
+    crSettGrid[4, 2] = helpCrSett
+
+    push!(crSettFrame, crSettGrid)
+
+    ####################################################################################################################
     settingGridLeft[1, 1] = baseCaseFrame
     settingGridLeft[1, 2] = equipmentFrame
 
     settingGridRight[1, 1] = criterionFrame
+    settingGridRight[1, 2] = crSettFrame
 
     settingGrid[1, 1] = settingGridLeft
     settingGrid[2, 1] = settingGridRight
