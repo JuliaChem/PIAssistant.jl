@@ -466,12 +466,26 @@ function mainPI()
             newidxBC = Gtk.index_from_iter(baseCaseList, selected(selBC))
             dictEq["$(baseCaseList[newidxBC,2])"] = []
 
+            testEq = zeros(1, length(equipmentList))
             for i = 1:length(equipmentList)
                 push!(
                     dictEq["$(baseCaseList[newidxBC,2])"],
                     (equipmentList[i, 1], equipmentList[i, 2], equipmentList[i, 3]),
                     )
+
+                    if equipmentList[i, 1] == "not specified"
+                        testEq[i] = 1
+                    end
             end
+
+            newidxBC = Gtk.index_from_iter(baseCaseList, selected(selmodelBaseCase))
+
+            if length(equipmentList) >= 2
+                if sum(testEq) == 0
+                    baseCaseList[newidxBC, 3] = @sprintf("Equipments= %i, Complete", length(equipmentList))
+                end
+            end
+
         else
             warn_dialog("No equipment specified for option $(idxIDEq), see Help", mainPIWin)
         end
@@ -488,7 +502,11 @@ function mainPI()
 
          newidxBC = Gtk.index_from_iter(baseCaseList, selected(selBC))
          push!(dictEq["$(baseCaseList[newidxBC,2])"], ("not specified", "not specified", "not specified"))
-         println(dictEq)
+
+         newidxBC = Gtk.index_from_iter(baseCaseList, selected(selmodelBaseCase))
+         baseCaseList[newidxBC, 3] = "Incomplete"
+         baseCaseList[newidxBC, 4] = "Incomplete"
+         baseCaseList[newidxBC, 5] = "Incomplete"
     end
 
     deleteEq = Button("Delete")
@@ -510,6 +528,13 @@ function mainPI()
                 set_gtk_property!(clearEq, :sensitive, false)
                 set_gtk_property!(equipmentFrame, :label, " Equipments ")
             end
+
+            if length(equipmentList) < 2
+                newidxBC = Gtk.index_from_iter(baseCaseList, selected(selmodelBaseCase))
+                baseCaseList[newidxBC, 3] = "Incomplete"
+                baseCaseList[newidxBC, 4] = "Incomplete"
+                baseCaseList[newidxBC, 5] = "Incomplete"
+            end
         end
     end
 
@@ -523,6 +548,11 @@ function mainPI()
         empty!(equipmentList)
         set_gtk_property!(clearEq, :sensitive, false)
         set_gtk_property!(deleteEq, :sensitive, false)
+
+        newidxBC = Gtk.index_from_iter(baseCaseList, selected(selmodelBaseCase))
+        baseCaseList[newidxBC, 3] = "Incomplete"
+        baseCaseList[newidxBC, 4] = "Incomplete"
+        baseCaseList[newidxBC, 5] = "Incomplete"
     end
 
     helpEq = Button("Help")
