@@ -399,7 +399,12 @@ function mainPI()
 
     ## Notebook for Equiptment and Criteria ############################################################################
     equitCritFrame = Frame()
-    set_gtk_property!(equitCritFrame, :height_request, (hNb - 30)/2 - 3)
+    if Sys.iswindows()
+        set_gtk_property!(equitCritFrame, :height_request, (hNb - 30)/2 - 3)
+    else
+        set_gtk_property!(equitCritFrame, :height_request, (hNb - 30)/2 - 20)
+    end
+
     set_gtk_property!(equitCritFrame, :width_request, (h / 2) - 15)
     set_gtk_property!(equitCritFrame, :margin_top, 10)
 
@@ -424,7 +429,12 @@ function mainPI()
     # TreeView for Base Case Design
     wBC = (h / 2) - 15
     equipmentFrameTree = Frame()
-    set_gtk_property!(equipmentFrameTree, :height_request, (hNb - 30)/2 - 110)
+
+    if Sys.iswindows()
+        set_gtk_property!(equipmentFrameTree, :height_request, (hNb - 30)/2 - 110)
+    else
+        set_gtk_property!(equipmentFrameTree, :height_request, (hNb - 30)/2 - 85)
+    end
     set_gtk_property!(equipmentFrameTree, :width_request, wBC - 20)
     set_gtk_property!(equipmentFrameTree, :margin_top, 5)
     equipmentScroll = ScrolledWindow()
