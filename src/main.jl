@@ -409,7 +409,7 @@ function mainPI()
 
     # Equipment ########################################################################################################
     equipmentFrame = Frame()
-    set_gtk_property!(equipmentFrame, :height_request, (hNb - 30)/2 - 75)
+    #set_gtk_property!(equipmentFrame, :height_request, (hNb - 30)/2 - 80)
     set_gtk_property!(equipmentFrame, :width_request, (h / 2) - 15)
     set_gtk_property!(equipmentFrame, :label_xalign, 0.50)
 
@@ -424,7 +424,7 @@ function mainPI()
     # TreeView for Base Case Design
     wBC = (h / 2) - 15
     equipmentFrameTree = Frame()
-    set_gtk_property!(equipmentFrameTree, :height_request, (hNb - 30)/2 - 110)
+    set_gtk_property!(equipmentFrameTree, :height_request, (hNb - 30)/2 - 116)
     set_gtk_property!(equipmentFrameTree, :width_request, wBC - 20)
     set_gtk_property!(equipmentFrameTree, :margin_top, 5)
     equipmentScroll = ScrolledWindow()
@@ -575,7 +575,7 @@ function mainPI()
 
     # Metrics ##########################################################################################################
     metricsFrame = Frame()
-    set_gtk_property!(metricsFrame, :height_request, (hNb - 30)/2 - 75)
+    #set_gtk_property!(metricsFrame, :height_request, (hNb - 30)/2 - 80)
     set_gtk_property!(metricsFrame, :width_request, (h / 2) - 15)
     set_gtk_property!(metricsFrame, :label_xalign, 0.50)
 
