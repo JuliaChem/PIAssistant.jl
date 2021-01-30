@@ -234,14 +234,12 @@ function mainPI()
                 dictBC["$(text)"] = pop!(dictBC, "$(baseCaseList[currentID, 2])")
                 dictEq["$(text)"] = pop!(dictEq, "$(baseCaseList[currentID, 2])")
                 baseCaseList[idxTree + 1, 2] = text
-                set_gtk_property!(equipmentFrame, :label, " Equipments for $(baseCaseList[currentID, 2]) ")
             end
         end
     end
 
     signal_connect(baseCaseTreeView, :row_activated) do widget, path, column
         currentID = selected(selmodelBaseCase)
-        set_gtk_property!(equipmentFrame, :label, " Equipments for $(baseCaseList[currentID, 2]) ")
         set_gtk_property!(addEq, :sensitive, true)
         empty!(equipmentList)
 
@@ -322,7 +320,6 @@ function mainPI()
 
             if length(baseCaseList) > 0
                 newidxBC = Gtk.index_from_iter(baseCaseList, selected(selBC))
-                set_gtk_property!(equipmentFrame, :label, " Equipments for $(baseCaseList[newidxBC, 2]) ")
             end
 
             if length(baseCaseList)==0
@@ -333,7 +330,6 @@ function mainPI()
                 set_gtk_property!(pdfToolbar, :sensitive, false)
                 set_gtk_property!(addEq, :sensitive, false)
                 set_gtk_property!(clearEq, :sensitive, false)
-                set_gtk_property!(equipmentFrame, :label, " Equipments ")
                 empty!(equipmentList)
             end
             global idxEq = zeros(1, idxBC)
@@ -364,9 +360,9 @@ function mainPI()
 
     push!(baseCaseFrame, baseCaseGrid)
 
-    ####################################################################################################################
-    # Equipments
-    ####################################################################################################################
+
+    # Equipments #######################################################################################################
+
     global listEqPhenomena = DataFrames.DataFrame(ID = Float64[], Name = String[], Phenomena = Array[])
     global dictEq = Dict()
 
@@ -400,8 +396,20 @@ function mainPI()
     push!(listEqPhenomena, (27, "Liquid-Liquid Extraction with Reaction", ["M", "R", "PC", "PS"]))
     push!(listEqPhenomena, (28, "Reactive Crystallization", ["2phM", "R", "C", "PC", "PT", "PS"]))
 
-    equipmentFrame = Frame(" Equipments ")
-    set_gtk_property!(equipmentFrame, :height_request, (hNb - 30)/2)
+
+    ## Notebook for Equiptment and Criteria ############################################################################
+    equitCritFrame = Frame()
+    set_gtk_property!(equitCritFrame, :height_request, (hNb - 30)/2 - 3)
+    set_gtk_property!(equitCritFrame, :width_request, (h / 2) - 15)
+    set_gtk_property!(equitCritFrame, :margin_top, 10)
+
+    equitCritNotebook = Notebook()
+    push!(equitCritFrame, equitCritNotebook)
+    ####################################################################################################################
+
+    # Equipment ########################################################################################################
+    equipmentFrame = Frame()
+    set_gtk_property!(equipmentFrame, :height_request, (hNb - 30)/2 - 75)
     set_gtk_property!(equipmentFrame, :width_request, (h / 2) - 15)
     set_gtk_property!(equipmentFrame, :label_xalign, 0.50)
 
@@ -416,8 +424,9 @@ function mainPI()
     # TreeView for Base Case Design
     wBC = (h / 2) - 15
     equipmentFrameTree = Frame()
-    set_gtk_property!(equipmentFrameTree, :height_request, (hNb - 30)/2 - 75)
+    set_gtk_property!(equipmentFrameTree, :height_request, (hNb - 30)/2 - 110)
     set_gtk_property!(equipmentFrameTree, :width_request, wBC - 20)
+    set_gtk_property!(equipmentFrameTree, :margin_top, 5)
     equipmentScroll = ScrolledWindow()
     push!(equipmentFrameTree, equipmentScroll)
 
@@ -524,7 +533,6 @@ function mainPI()
             if length(equipmentList)==0
                 set_gtk_property!(deleteEq, :sensitive, false)
                 set_gtk_property!(clearEq, :sensitive, false)
-                set_gtk_property!(equipmentFrame, :label, " Equipments ")
             end
 
             if length(equipmentList) < 2
@@ -563,6 +571,22 @@ function mainPI()
     equipmentGrid[4, 2] = helpEq
 
     push!(equipmentFrame, equipmentGrid)
+    ####################################################################################################################
+
+    # Metrics ##########################################################################################################
+    metricsFrame = Frame()
+    set_gtk_property!(metricsFrame, :height_request, (hNb - 30)/2 - 75)
+    set_gtk_property!(metricsFrame, :width_request, (h / 2) - 15)
+    set_gtk_property!(metricsFrame, :label_xalign, 0.50)
+
+    metricsGrid = Grid()
+    set_gtk_property!(metricsGrid, :column_spacing, 10)
+    set_gtk_property!(metricsGrid, :row_spacing, 10)
+    set_gtk_property!(metricsGrid, :margin_top, 5)
+    set_gtk_property!(metricsGrid, :margin_bottom, 10)
+    set_gtk_property!(metricsGrid, :margin_left, 10)
+    set_gtk_property!(metricsGrid, :margin_right, 10)
+    ####################################################################################################################
 
     ####################################################################################################################
     # Criterion
@@ -658,7 +682,7 @@ function mainPI()
     ####################################################################################################################
     # Criterion Settings
     ####################################################################################################################
-    crSettFrame = Frame(" Settings Criterion ")
+    crSettFrame = Frame(" Input Data for Criterion ")
     set_gtk_property!(crSettFrame, :height_request, (hNb - 30)/2)
     set_gtk_property!(crSettFrame, :width_request, (h / 2) - 15)
     set_gtk_property!(crSettFrame, :label_xalign, 0.50)
@@ -746,9 +770,13 @@ function mainPI()
 
     push!(crSettFrame, crSettGrid)
 
+
+    push!(equitCritNotebook, equipmentFrame, "Equipment")
+    push!(equitCritNotebook, metricsFrame, "Metrics")
+
     ####################################################################################################################
     settingGridLeft[1, 1] = baseCaseFrame
-    settingGridLeft[1, 2] = equipmentFrame
+    settingGridLeft[1, 2] = equitCritFrame
 
     settingGridRight[1, 1] = criterionFrame
     settingGridRight[1, 2] = crSettFrame
