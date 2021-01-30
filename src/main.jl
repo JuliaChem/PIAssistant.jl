@@ -424,7 +424,7 @@ function mainPI()
     # TreeView for Base Case Design
     wBC = (h / 2) - 15
     equipmentFrameTree = Frame()
-    set_gtk_property!(equipmentFrameTree, :height_request, (hNb - 30)/2 - 116)
+    set_gtk_property!(equipmentFrameTree, :height_request, (hNb - 30)/2 - 110)
     set_gtk_property!(equipmentFrameTree, :width_request, wBC - 20)
     set_gtk_property!(equipmentFrameTree, :margin_top, 5)
     equipmentScroll = ScrolledWindow()
