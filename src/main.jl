@@ -402,7 +402,7 @@ function mainPI()
     if Sys.iswindows()
         set_gtk_property!(equitCritFrame, :height_request, (hNb - 30)/2 - 3)
     else
-        set_gtk_property!(equitCritFrame, :height_request, (hNb - 30)/2 - 20)
+        set_gtk_property!(equitCritFrame, :height_request, (hNb - 30)/2 - 21)
     end
 
     set_gtk_property!(equitCritFrame, :width_request, (h / 2) - 15)
