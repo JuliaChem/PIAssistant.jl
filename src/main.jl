@@ -433,7 +433,7 @@ function mainPI()
     if Sys.iswindows()
         set_gtk_property!(equipmentFrameTree, :height_request, (hNb - 30)/2 - 110)
     else
-        set_gtk_property!(equipmentFrameTree, :height_request, (hNb - 30)/2 - 105)
+        set_gtk_property!(equipmentFrameTree, :height_request, (hNb - 30)/2 - 100)
     end
     set_gtk_property!(equipmentFrameTree, :width_request, wBC - 20)
     set_gtk_property!(equipmentFrameTree, :margin_top, 5)
