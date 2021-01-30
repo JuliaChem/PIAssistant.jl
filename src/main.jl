@@ -35,7 +35,7 @@ function mainPI()
     set_gtk_property!(mainPIWin, :accept_focus, true)
     set_gtk_property!(mainPIWin, :resizable, false)
     set_gtk_property!(mainPIWin, :width_request, h * 1.0)
-    set_gtk_property!(mainPIWin, :height_request, h * 0.70)
+    set_gtk_property!(mainPIWin, :height_request, h * 0.70 - 10)
     set_gtk_property!(mainPIWin, :visible, false)
 
     ####################################################################################################################
@@ -433,7 +433,7 @@ function mainPI()
     if Sys.iswindows()
         set_gtk_property!(equipmentFrameTree, :height_request, (hNb - 30)/2 - 110)
     else
-        set_gtk_property!(equipmentFrameTree, :height_request, (hNb - 30)/2 - 100)
+        set_gtk_property!(equipmentFrameTree, :height_request, (hNb - 30)/2 - 105)
     end
     set_gtk_property!(equipmentFrameTree, :width_request, wBC - 20)
     set_gtk_property!(equipmentFrameTree, :margin_top, 5)
