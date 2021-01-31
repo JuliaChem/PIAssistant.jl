@@ -414,7 +414,6 @@ function mainPI()
 
     # Equipment ########################################################################################################
     equipmentFrame = Frame()
-    #set_gtk_property!(equipmentFrame, :height_request, (hNb - 30)/2 - 80)
     set_gtk_property!(equipmentFrame, :width_request, (h / 2) - 15)
     set_gtk_property!(equipmentFrame, :label_xalign, 0.50)
 
@@ -453,6 +452,7 @@ function mainPI()
 
     renderTxt3 = CellRendererText()
     renderTxt4 = CellRendererText()
+
     set_gtk_property!(renderTxt3, :editable, true)
     set_gtk_property!(renderTxt4, :editable, false)
 
@@ -574,6 +574,91 @@ function mainPI()
     helpEq = Button("Help")
     set_gtk_property!(helpEq, :width_request, (wBC - 5*10)/4)
     set_gtk_property!(helpEq, :sensitive, true)
+    signal_connect(helpEq, :clicked) do widget
+        # Equipment Help Win
+        eqHelpWin = Window()
+        set_gtk_property!(eqHelpWin, :title, "Equiptment Help")
+        set_gtk_property!(eqHelpWin, :window_position, 3)
+        set_gtk_property!(eqHelpWin, :accept_focus, true)
+        set_gtk_property!(eqHelpWin, :resizable, false)
+        set_gtk_property!(eqHelpWin, :width_request, h/2.5)
+        set_gtk_property!(eqHelpWin, :height_request, h/2)
+
+        eqFrameHelp = Frame("Equipment evailable")
+        set_gtk_property!(eqFrameHelp, :label_xalign, 0.5)
+        set_gtk_property!(eqFrameHelp, :margin_top, 5)
+        set_gtk_property!(eqFrameHelp, :margin_bottom, 10)
+        set_gtk_property!(eqFrameHelp, :margin_left, 10)
+        set_gtk_property!(eqFrameHelp, :margin_right, 10)
+
+        eqGridHelp = Grid()
+        set_gtk_property!(eqGridHelp, :column_spacing, 10)
+        set_gtk_property!(eqGridHelp, :row_spacing, 10)
+        set_gtk_property!(eqGridHelp, :margin_top, 5)
+        set_gtk_property!(eqGridHelp, :margin_bottom, 10)
+        set_gtk_property!(eqGridHelp, :margin_left, 10)
+        set_gtk_property!(eqGridHelp, :margin_right, 10)
+
+        eqFrameTree = Frame()
+        set_gtk_property!(eqFrameTree, :width_request, h/2.5 - 20)
+        set_gtk_property!(eqFrameTree, :height_request, h/2 - 30 - 60)
+
+        eqScroll = ScrolledWindow()
+        push!(eqFrameTree, eqScroll)
+
+        # Table for Equipment help
+        eqList = ListStore(Int, String, String)
+
+        # Load data from listEqPhenomena
+
+        for i=1:size(listEqPhenomena)[1]
+            push!(eqList, (listEqPhenomena[i,1], listEqPhenomena[i,2], string(listEqPhenomena[i,3])))
+        end
+
+        # Visual Table for Equipment help
+        eqTreeView = TreeView(TreeModel(eqList))
+        set_gtk_property!(eqTreeView, :reorderable, true)
+        set_gtk_property!(eqTreeView, :enable_grid_lines, 3)
+
+        # Set selectable
+        selmodelequipment = G_.selection(equipmentTreeView)
+
+        renderTxteq = CellRendererText()
+        set_gtk_property!(renderTxteq, :editable, false)
+
+        c1 = TreeViewColumn("ID", renderTxteq, Dict([("text", 0)]))
+        c2 = TreeViewColumn("Equipment", renderTxteq, Dict([("text", 1)]))
+        c3 = TreeViewColumn("Phenomena", renderTxteq, Dict([("text", 2)]))
+
+        # Allows to select rows
+        for c in [c1, c2, c3]
+            Gtk.GAccessor.resizable(c, true)
+        end
+
+        push!(eqTreeView, c1, c2, c3)
+        push!(eqScroll, eqTreeView)
+
+        eqClose = Button("Close")
+        set_gtk_property!(eqClose, :label, "Close")
+        set_gtk_property!(eqClose, :tooltip_markup, "Close")
+        signal_connect(eqClose, :clicked) do widget
+            destroy(eqHelpWin)
+        end
+
+        eqAdd = Button("Add")
+        set_gtk_property!(eqAdd, :label, "Add")
+        set_gtk_property!(eqAdd, :tooltip_markup, "Add")
+        signal_connect(eqAdd, :clicked) do widget
+            destroy(eqHelpWin)
+        end
+
+        eqGridHelp[1, 2] = eqAdd
+        eqGridHelp[2, 2] = eqClose
+        eqGridHelp[1:2, 1] = eqFrameTree
+        push!(eqFrameHelp, eqGridHelp)
+        push!(eqHelpWin, eqFrameHelp)
+        Gtk.showall(eqHelpWin)
+    end
 
     equipmentGrid[1, 2] = addEq
     equipmentGrid[2, 2] = deleteEq
