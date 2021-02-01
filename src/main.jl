@@ -241,6 +241,8 @@ function mainPI()
     signal_connect(baseCaseTreeView, :row_activated) do widget, path, column
         currentID = selected(selmodelBaseCase)
         set_gtk_property!(addEq, :sensitive, true)
+        set_gtk_property!(helpEq, :sensitive, true)
+
         empty!(equipmentList)
 
         newSel = length(dictEq["$(baseCaseList[currentID, 2])"])
@@ -289,6 +291,7 @@ function mainPI()
             set_gtk_property!(deleteBC, :sensitive, true)
             set_gtk_property!(saveToolbar, :sensitive, true)
             set_gtk_property!(pdfToolbar, :sensitive, true)
+
             dictBC["$(baseCaseName)"] = []
             dictEq["$(baseCaseName)"] = []
             global idxBC += 1
@@ -300,6 +303,7 @@ function mainPI()
             set_gtk_property!(deleteBC, :sensitive, true)
             set_gtk_property!(saveToolbar, :sensitive, true)
             set_gtk_property!(pdfToolbar, :sensitive, true)
+
             dictBC["$(baseCaseName)"] = []
             dictEq["$(baseCaseName)"] = []
             global idxBC += 1
@@ -330,6 +334,7 @@ function mainPI()
                 set_gtk_property!(pdfToolbar, :sensitive, false)
                 set_gtk_property!(addEq, :sensitive, false)
                 set_gtk_property!(clearEq, :sensitive, false)
+                set_gtk_property!(helpEq, :sensitive, false)
                 empty!(equipmentList)
             end
             global idxEq = zeros(1, idxBC)
@@ -348,7 +353,7 @@ function mainPI()
         set_gtk_property!(saveToolbar, :sensitive, false)
         set_gtk_property!(pdfToolbar, :sensitive, false)
         set_gtk_property!(addEq, :sensitive, false)
-        set_gtk_property!(equipmentFrame, :label, " Equipments ")
+        set_gtk_property!(helpEq, :sensitive, false)
         global dictBC = Dict()
         global dictEq = Dict()
         global idxBC = 1
@@ -533,7 +538,7 @@ function mainPI()
         if hasselection(selmodelequipment)
             currentID = selected(selmodelequipment)
             newidxBC = Gtk.index_from_iter(equipmentList, selected(selmodelequipment))
-
+            println("si")
             deleteat!(equipmentList, currentID)
 
             currentIDBC = selected(selBC)
@@ -573,7 +578,7 @@ function mainPI()
 
     helpEq = Button("Help")
     set_gtk_property!(helpEq, :width_request, (wBC - 5*10)/4)
-    set_gtk_property!(helpEq, :sensitive, true)
+    set_gtk_property!(helpEq, :sensitive, false)
     signal_connect(helpEq, :clicked) do widget
         # Equipment Help Win
         eqHelpWin = Window()
@@ -621,7 +626,9 @@ function mainPI()
         set_gtk_property!(eqTreeView, :enable_grid_lines, 3)
 
         # Set selectable
-        selmodelequipment = G_.selection(equipmentTreeView)
+        selEqHelp = Gtk.GAccessor.selection(eqTreeView)
+        selEqHelp = Gtk.GAccessor.mode(selEqHelp, Gtk.GConstants.GtkSelectionMode.SINGLE)
+        selEqHelp = G_.selection(eqTreeView)
 
         renderTxteq = CellRendererText()
         set_gtk_property!(renderTxteq, :editable, false)
@@ -649,7 +656,57 @@ function mainPI()
         set_gtk_property!(eqAdd, :label, "Add")
         set_gtk_property!(eqAdd, :tooltip_markup, "Add")
         signal_connect(eqAdd, :clicked) do widget
-            destroy(eqHelpWin)
+            currentID = selected(selEqHelp)
+            push!(equipmentList, (eqList[currentID, 1], eqList[currentID, 2], eqList[currentID, 3]))
+            set_gtk_property!(clearEq, :sensitive, true)
+            set_gtk_property!(deleteEq, :sensitive, true)
+
+            newidxBC = Gtk.index_from_iter(baseCaseList, selected(selBC))
+            dictEq["$(baseCaseList[newidxBC,2])"] = []
+
+            testEq = zeros(1, length(equipmentList))
+            for i = 1:length(equipmentList)
+                push!(dictEq["$(baseCaseList[newidxBC,2])"], (equipmentList[i, 1], equipmentList[i, 2], equipmentList[i, 3]))
+
+                if equipmentList[i, 1] == "not specified"
+                    testEq[i] = 1
+                end
+            end
+
+            newidxBC = Gtk.index_from_iter(baseCaseList, selected(selmodelBaseCase))
+
+            if length(equipmentList) >= 2
+                if sum(testEq) == 0
+                    baseCaseList[newidxBC, 3] = @sprintf("Equipments= %i, Complete", length(equipmentList))
+                end
+            end
+        end
+
+        signal_connect(eqTreeView, :row_activated) do widget, path, column
+            currentID = selected(selEqHelp)
+            push!(equipmentList, (eqList[currentID,1], eqList[currentID,2], eqList[currentID,3]))
+            set_gtk_property!(clearEq, :sensitive, true)
+            set_gtk_property!(deleteEq, :sensitive, true)
+
+            newidxBC = Gtk.index_from_iter(baseCaseList, selected(selBC))
+            dictEq["$(baseCaseList[newidxBC,2])"] = []
+
+            testEq = zeros(1, length(equipmentList))
+            for i = 1:length(equipmentList)
+                push!(dictEq["$(baseCaseList[newidxBC,2])"], (equipmentList[i, 1], equipmentList[i, 2], equipmentList[i, 3]))
+
+                if equipmentList[i, 1] == "not specified"
+                    testEq[i] = 1
+                end
+            end
+
+            newidxBC = Gtk.index_from_iter(baseCaseList, selected(selmodelBaseCase))
+
+            if length(equipmentList) >= 2
+                if sum(testEq) == 0
+                    baseCaseList[newidxBC, 3] = @sprintf("Equipments= %i, Complete", length(equipmentList))
+                end
+            end
         end
 
         eqGridHelp[1, 2] = eqAdd
