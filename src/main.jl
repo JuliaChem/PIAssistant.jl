@@ -194,7 +194,7 @@ function mainPI()
     push!(baseCaseFrameTree, baseCaseScroll)
 
     # Table for Case Design
-    baseCaseList = ListStore(String, String, String, String, String)
+    baseCaseList = ListStore(String, String, String, String, String, String)
 
     # Visual Table for Case Design
     baseCaseTreeView = TreeView(TreeModel(baseCaseList))
@@ -215,8 +215,9 @@ function mainPI()
     c1 = TreeViewColumn("ID", renderTxt2, Dict([("text", 0)]))
     c2 = TreeViewColumn("Name", renderTxt1, Dict([("text", 1)]))
     c3 = TreeViewColumn("Equipments", renderTxt2, Dict([("text", 2)]))
-    c4 = TreeViewColumn("Criterion", renderTxt2, Dict([("text", 3)]))
-    c5 = TreeViewColumn("Status", renderTxt2, Dict([("text", 4)]))
+    c4 = TreeViewColumn("Metrics", renderTxt2, Dict([("text", 3)]))
+    c5 = TreeViewColumn("Criterion", renderTxt2, Dict([("text", 4)]))
+    c6 = TreeViewColumn("Status", renderTxt2, Dict([("text", 4)]))
 
     signal_connect(renderTxt1, "edited") do widget, path, text
         idxTree = parse(Int, path)
@@ -242,8 +243,15 @@ function mainPI()
         currentID = selected(selmodelBaseCase)
         set_gtk_property!(addEq, :sensitive, true)
         set_gtk_property!(helpEq, :sensitive, true)
+        set_gtk_property!(addMet, :sensitive, true)
+        set_gtk_property!(helpMet, :sensitive, true)
+        set_gtk_property!(addCr, :sensitive, true)
+        set_gtk_property!(addCrSett, :sensitive, true)
+        set_gtk_property!(helpCr, :sensitive, true)
+        set_gtk_property!(helpCrSett, :sensitive, true)
 
         empty!(equipmentList)
+        empty!(metricsList)
 
         newSel = length(dictEq["$(baseCaseList[currentID, 2])"])
         if newSel != 0
@@ -264,14 +272,35 @@ function mainPI()
                 ),
             )
         end
+
+        newSelMet = length(dictMet["$(baseCaseList[currentID, 2])"])
+        if newSelMet != 0
+            set_gtk_property!(clearMet, :sensitive, true)
+            set_gtk_property!(deleteMet, :sensitive, true)
+        else
+            set_gtk_property!(clearMet, :sensitive, false)
+            set_gtk_property!(deleteMet, :sensitive, false)
+        end
+
+        for i = 1:newSelMet
+            push!(
+                metricsList,
+                (
+                dictMet["$(baseCaseList[currentID, 2])"][i][1],
+                dictMet["$(baseCaseList[currentID, 2])"][i][2],
+                dictMet["$(baseCaseList[currentID, 2])"][i][3],
+                dictMet["$(baseCaseList[currentID, 2])"][i][4],
+                ),
+            )
+        end
     end
 
     # Allows to select rows
-    for c in [c1, c2, c3, c4, c5]
+    for c in [c1, c2, c3, c4, c5, c6]
         Gtk.GAccessor.resizable(c, true)
     end
 
-    push!(baseCaseTreeView, c1, c2, c3, c4, c5)
+    push!(baseCaseTreeView, c1, c2, c3, c4, c5, c6)
     push!(baseCaseScroll, baseCaseTreeView)
 
     baseCaseGrid[1:3, 1] = baseCaseFrameTree
@@ -286,7 +315,7 @@ function mainPI()
         baseCaseName = @sprintf("Base Case_%i", idxBC)
 
         if length(baseCaseList) == 0
-            push!(baseCaseList, (length(baseCaseList) + 1, baseCaseName, "Incomplete", "Incomplete", "Incomplete"))
+            push!(baseCaseList, (length(baseCaseList) + 1, baseCaseName, "Incomplete", "Incomplete", "Incomplete", "Incomplete"))
             set_gtk_property!(clearBC, :sensitive, true)
             set_gtk_property!(deleteBC, :sensitive, true)
             set_gtk_property!(saveToolbar, :sensitive, true)
@@ -294,11 +323,12 @@ function mainPI()
 
             dictBC["$(baseCaseName)"] = []
             dictEq["$(baseCaseName)"] = []
+            dictMet["$(baseCaseName)"] = []
             global idxBC += 1
             global idxEq = zeros(1, idxBC)
         else
             t = zeros(1, length(baseCaseList))
-            push!(baseCaseList, (length(baseCaseList) + 1, baseCaseName, "Incomplete", "Incomplete", "Incomplete"))
+            push!(baseCaseList, (length(baseCaseList) + 1, baseCaseName, "Incomplete", "Incomplete", "Incomplete", "Incomplete"))
             set_gtk_property!(clearBC, :sensitive, true)
             set_gtk_property!(deleteBC, :sensitive, true)
             set_gtk_property!(saveToolbar, :sensitive, true)
@@ -306,6 +336,8 @@ function mainPI()
 
             dictBC["$(baseCaseName)"] = []
             dictEq["$(baseCaseName)"] = []
+            dictMet["$(baseCaseName)"] = []
+
             global idxBC += 1
             global idxEq = zeros(1, idxBC)
         end
@@ -321,6 +353,7 @@ function mainPI()
             delete!(dictEq, baseCaseList[currentID, 2])
             deleteat!(baseCaseList, currentID)
             empty!(equipmentList)
+            empty!(metricsList)
 
             if length(baseCaseList) > 0
                 newidxBC = Gtk.index_from_iter(baseCaseList, selected(selBC))
@@ -328,14 +361,26 @@ function mainPI()
 
             if length(baseCaseList)==0
                 global idxBC = 1
+                empty!(baseCaseList)
+                empty!(equipmentList)
+                empty!(metricsList)
                 set_gtk_property!(clearBC, :sensitive, false)
+                set_gtk_property!(clearEq, :sensitive, false)
                 set_gtk_property!(deleteBC, :sensitive, false)
+                set_gtk_property!(deleteEq, :sensitive, false)
                 set_gtk_property!(saveToolbar, :sensitive, false)
                 set_gtk_property!(pdfToolbar, :sensitive, false)
                 set_gtk_property!(addEq, :sensitive, false)
-                set_gtk_property!(clearEq, :sensitive, false)
                 set_gtk_property!(helpEq, :sensitive, false)
-                empty!(equipmentList)
+                set_gtk_property!(addMet, :sensitive, false)
+                set_gtk_property!(helpMet, :sensitive, false)
+                set_gtk_property!(deleteMet, :sensitive, false)
+                set_gtk_property!(clearMet, :sensitive, false)
+                set_gtk_property!(equitMetNotebook, :page, 0)
+                set_gtk_property!(addCr, :sensitive, false)
+                set_gtk_property!(addCrSett, :sensitive, false)
+                set_gtk_property!(helpCr, :sensitive, false)
+                set_gtk_property!(helpCrSett, :sensitive, false)
             end
             global idxEq = zeros(1, idxBC)
         end
@@ -347,13 +392,25 @@ function mainPI()
     signal_connect(clearBC, :clicked) do widget
         empty!(baseCaseList)
         empty!(equipmentList)
+        empty!(metricsList)
         set_gtk_property!(clearBC, :sensitive, false)
         set_gtk_property!(clearEq, :sensitive, false)
         set_gtk_property!(deleteBC, :sensitive, false)
+        set_gtk_property!(deleteEq, :sensitive, false)
         set_gtk_property!(saveToolbar, :sensitive, false)
         set_gtk_property!(pdfToolbar, :sensitive, false)
         set_gtk_property!(addEq, :sensitive, false)
         set_gtk_property!(helpEq, :sensitive, false)
+        set_gtk_property!(addMet, :sensitive, false)
+        set_gtk_property!(helpMet, :sensitive, false)
+        set_gtk_property!(deleteMet, :sensitive, false)
+        set_gtk_property!(clearMet, :sensitive, false)
+        set_gtk_property!(addCr, :sensitive, false)
+        set_gtk_property!(addCrSett, :sensitive, false)
+        set_gtk_property!(helpCr, :sensitive, false)
+        set_gtk_property!(helpCrSett, :sensitive, false)
+        set_gtk_property!(equitMetNotebook, :page, 0)
+
         global dictBC = Dict()
         global dictEq = Dict()
         global idxBC = 1
@@ -365,9 +422,22 @@ function mainPI()
 
     push!(baseCaseFrame, baseCaseGrid)
 
+    ## Notebook for Equiptment and Criteria ############################################################################
+    equitMetFrame = Frame()
+    if Sys.iswindows()
+        set_gtk_property!(equitMetFrame, :height_request, (hNb - 30)/2 - 3)
+    else
+        set_gtk_property!(equitMetFrame, :height_request, (hNb - 30)/2 - 21)
+    end
 
-    # Equipments #######################################################################################################
+    set_gtk_property!(equitMetFrame, :width_request, (h / 2) - 15)
+    set_gtk_property!(equitMetFrame, :margin_top, 10)
 
+    equitMetNotebook = Notebook()
+    push!(equitMetFrame, equitMetNotebook)
+    ####################################################################################################################
+
+    # Equipment ########################################################################################################
     global listEqPhenomena = DataFrames.DataFrame(ID = Float64[], Name = String[], Phenomena = Array[])
     global dictEq = Dict()
 
@@ -401,23 +471,6 @@ function mainPI()
     push!(listEqPhenomena, (27, "Liquid-Liquid Extraction with Reaction", ["M", "R", "PC", "PS"]))
     push!(listEqPhenomena, (28, "Reactive Crystallization", ["2phM", "R", "C", "PC", "PT", "PS"]))
 
-
-    ## Notebook for Equiptment and Criteria ############################################################################
-    equitCritFrame = Frame()
-    if Sys.iswindows()
-        set_gtk_property!(equitCritFrame, :height_request, (hNb - 30)/2 - 3)
-    else
-        set_gtk_property!(equitCritFrame, :height_request, (hNb - 30)/2 - 21)
-    end
-
-    set_gtk_property!(equitCritFrame, :width_request, (h / 2) - 15)
-    set_gtk_property!(equitCritFrame, :margin_top, 10)
-
-    equitCritNotebook = Notebook()
-    push!(equitCritFrame, equitCritNotebook)
-    ####################################################################################################################
-
-    # Equipment ########################################################################################################
     equipmentFrame = Frame()
     set_gtk_property!(equipmentFrame, :width_request, (h / 2) - 15)
     set_gtk_property!(equipmentFrame, :label_xalign, 0.50)
@@ -439,6 +492,7 @@ function mainPI()
     else
         set_gtk_property!(equipmentFrameTree, :height_request, (hNb - 30)/2 - 101)
     end
+
     set_gtk_property!(equipmentFrameTree, :width_request, wBC - 20)
     set_gtk_property!(equipmentFrameTree, :margin_top, 5)
     equipmentScroll = ScrolledWindow()
@@ -504,7 +558,7 @@ function mainPI()
 
             if length(equipmentList) >= 2
                 if sum(testEq) == 0
-                    baseCaseList[newidxBC, 3] = @sprintf("Equipments= %i, Complete", length(equipmentList))
+                    baseCaseList[newidxBC, 3] = @sprintf("Equipments = %i, Complete", length(equipmentList))
                 end
             end
 
@@ -527,8 +581,6 @@ function mainPI()
 
          newidxBC = Gtk.index_from_iter(baseCaseList, selected(selmodelBaseCase))
          baseCaseList[newidxBC, 3] = "Incomplete"
-         baseCaseList[newidxBC, 4] = "Incomplete"
-         baseCaseList[newidxBC, 5] = "Incomplete"
     end
 
     deleteEq = Button("Delete")
@@ -538,7 +590,6 @@ function mainPI()
         if hasselection(selmodelequipment)
             currentID = selected(selmodelequipment)
             newidxBC = Gtk.index_from_iter(equipmentList, selected(selmodelequipment))
-            println("si")
             deleteat!(equipmentList, currentID)
 
             currentIDBC = selected(selBC)
@@ -553,9 +604,31 @@ function mainPI()
             if length(equipmentList) < 2
                 newidxBC = Gtk.index_from_iter(baseCaseList, selected(selmodelBaseCase))
                 baseCaseList[newidxBC, 3] = "Incomplete"
-                baseCaseList[newidxBC, 4] = "Incomplete"
-                baseCaseList[newidxBC, 5] = "Incomplete"
             end
+
+            newidxBC = Gtk.index_from_iter(baseCaseList, selected(selBC))
+            dictEq["$(baseCaseList[newidxBC,2])"] = []
+
+            testEq = zeros(1, length(equipmentList))
+            for i = 1:length(equipmentList)
+                push!(
+                    dictEq["$(baseCaseList[newidxBC,2])"],
+                    (equipmentList[i, 1], equipmentList[i, 2], equipmentList[i, 3]),
+                    )
+
+                    if equipmentList[i, 1] == "not specified"
+                        testEq[i] = 1
+                    end
+            end
+
+            newidxBC = Gtk.index_from_iter(baseCaseList, selected(selmodelBaseCase))
+
+            if length(equipmentList) >= 2
+                if sum(testEq) == 0
+                    baseCaseList[newidxBC, 3] = @sprintf("Equipments= %i, Complete", length(equipmentList))
+                end
+            end
+
         end
     end
 
@@ -572,8 +645,6 @@ function mainPI()
 
         newidxBC = Gtk.index_from_iter(baseCaseList, selected(selmodelBaseCase))
         baseCaseList[newidxBC, 3] = "Incomplete"
-        baseCaseList[newidxBC, 4] = "Incomplete"
-        baseCaseList[newidxBC, 5] = "Incomplete"
     end
 
     helpEq = Button("Help")
@@ -587,7 +658,6 @@ function mainPI()
         set_gtk_property!(eqHelpWin, :accept_focus, true)
         set_gtk_property!(eqHelpWin, :resizable, false)
         set_gtk_property!(eqHelpWin, :width_request, h/2.5)
-        set_gtk_property!(eqHelpWin, :height_request, h/2)
 
         eqFrameHelp = Frame("Equipment evailable")
         set_gtk_property!(eqFrameHelp, :label_xalign, 0.5)
@@ -677,7 +747,7 @@ function mainPI()
 
             if length(equipmentList) >= 2
                 if sum(testEq) == 0
-                    baseCaseList[newidxBC, 3] = @sprintf("Equipments= %i, Complete", length(equipmentList))
+                    baseCaseList[newidxBC, 3] = @sprintf("Equipments = %i, Complete", length(equipmentList))
                 end
             end
         end
@@ -726,8 +796,24 @@ function mainPI()
     ####################################################################################################################
 
     # Metrics ##########################################################################################################
+    global listMet = DataFrames.DataFrame(ID = Int[], Metric = String[], Symbol = String[], Value = String[])
+    global dictMet = Dict()
+
+    # Add avilable aquipments and phenomenas
+    push!(listMet, (1, "Operating cost", "OC", "not specified"))
+    push!(listMet, (2, "Purchase cost", "PC", "not specified"))
+    push!(listMet, (3, "Utility cost", "UC", "not specified"))
+    push!(listMet, (4, "Profit", "Pr", "not specified"))
+    push!(listMet, (5, "Return of investment", "ROI", "not specified"))
+    push!(listMet, (6, "Human toxicity by ingestion", "HTPI", "not specified"))
+    push!(listMet, (7, "Human toxicity by exposure", "HTPE", "not specified"))
+    push!(listMet, (8, "Global Warming", "GWP", "not specified"))
+    push!(listMet, (9, "Carcinogenics", "HTC", "not specified"))
+    push!(listMet, (10, "Non carcinogenics", "HTNC", "not specified"))
+    push!(listMet, (11, "Carbon footprint", "CF", "not specified"))
+    push!(listMet, (12, "Fire and explosion damage index", "FEDI", "not specified"))
+
     metricsFrame = Frame()
-    #set_gtk_property!(metricsFrame, :height_request, (hNb - 30)/2 - 80)
     set_gtk_property!(metricsFrame, :width_request, (h / 2) - 15)
     set_gtk_property!(metricsFrame, :label_xalign, 0.50)
 
@@ -738,6 +824,317 @@ function mainPI()
     set_gtk_property!(metricsGrid, :margin_bottom, 10)
     set_gtk_property!(metricsGrid, :margin_left, 10)
     set_gtk_property!(metricsGrid, :margin_right, 10)
+
+    # TreeView for Metrics
+    wBC = (h / 2) - 15
+    metricsFrameTree = Frame()
+
+    if Sys.iswindows()
+        set_gtk_property!(metricsFrameTree, :height_request, (hNb - 30)/2 - 110)
+    else
+        set_gtk_property!(metricsFrameTree, :height_request, (hNb - 30)/2 - 101)
+    end
+
+    set_gtk_property!(metricsFrameTree, :width_request, wBC - 20)
+    set_gtk_property!(metricsFrameTree, :margin_top, 5)
+    metricsScroll = ScrolledWindow()
+    push!(metricsFrameTree, metricsScroll)
+
+    # Table for Case Design
+    metricsList = ListStore(String, String, String, String)
+
+    # Visual Table for Case Design
+    metricsTreeView = TreeView(TreeModel(metricsList))
+    set_gtk_property!(metricsTreeView, :reorderable, true)
+    set_gtk_property!(metricsTreeView, :enable_grid_lines, 3)
+
+    # Set selectable
+    selmodelMetrics = G_.selection(metricsTreeView)
+
+    renderTxtM1 = CellRendererText()
+    renderTxtM2 = CellRendererText()
+    renderTxtM3 = CellRendererText()
+
+    set_gtk_property!(renderTxtM1, :editable, true)
+    set_gtk_property!(renderTxtM2, :editable, false)
+    set_gtk_property!(renderTxtM3, :editable, true)
+
+    c1 = TreeViewColumn("ID", renderTxtM1, Dict([("text", 0)]))
+    c2 = TreeViewColumn("Metric", renderTxtM2, Dict([("text", 1)]))
+    c3 = TreeViewColumn("Symbol", renderTxtM2, Dict([("text", 2)]))
+    c4 = TreeViewColumn("Value", renderTxtM3, Dict([("text", 3)]))
+
+    # Allows to select rows
+    for c in [c1, c2, c3, c4]
+        Gtk.GAccessor.resizable(c, true)
+    end
+
+    push!(metricsTreeView, c1, c2, c3, c4)
+    push!(metricsScroll, metricsTreeView)
+
+    metricsGrid[1:4, 1] = metricsFrameTree
+
+# TODO Add code for edited cell for 0both ID and value in Metrics
+    signal_connect(renderTxtM1, "edited") do widget, path, text
+        idxTreeMet = parse(Int, path) + 1
+        idxIDMet = parse(Int, text)
+
+
+                if idxIDMet >= 1 && idxIDMet <= 12
+                    metricsList[idxTreeMet, 1] = text
+                    metricsList[idxTreeMet, 2] = listMet[idxIDMet, 2]
+                    metricsList[idxTreeMet, 3] = listMet[idxIDMet, 3]
+
+                    newidxBC = Gtk.index_from_iter(baseCaseList, selected(selBC))
+                    dictMet["$(baseCaseList[newidxBC,2])"] = []
+
+                    testMet = zeros(1, length(metricsList))
+                    for i = 1:length(metricsList)
+                        push!(
+                            dictMet["$(baseCaseList[newidxBC,2])"],
+                            (metricsList[i, 1], metricsList[i, 2], metricsList[i, 3]), metricsList[i, 4],
+                            )
+
+                            if metricsList[i, 1] == "not specified"
+                                testMet[i] = 1
+                            end
+                    end
+                    newidxBC = Gtk.index_from_iter(baseCaseList, selected(selmodelBaseCase))
+
+                    if length(metricsList) >= 1
+                        if sum(testMet) == 0
+                            baseCaseList[newidxBC, 4] = @sprintf("Metrics = %i, Complete", length(metricsList))
+                        end
+                    end
+
+                else
+                    warn_dialog("No metric specified for option $(idxIDMet), see Help", mainPIWin)
+                end
+    end
+
+    # Buttons for base case design
+    addMet = Button("Add")
+    set_gtk_property!(addMet, :width_request, (wBC - 5*10)/4)
+    set_gtk_property!(addMet, :sensitive, false)
+    signal_connect(addMet, :clicked) do widget
+         push!(metricsList, ("not specified", "not specified", "not specified", "not specified"))
+         set_gtk_property!(clearMet, :sensitive, true)
+         set_gtk_property!(deleteMet, :sensitive, true)
+
+         newidxMet = Gtk.index_from_iter(baseCaseList, selected(selBC))
+         push!(dictMet["$(baseCaseList[newidxMet,2])"], ("not specified", "not specified", "not specified", "not specified"))
+
+         baseCaseList[newidxMet, 4] = "Incomplete"
+    end
+
+    deleteMet = Button("Delete")
+    set_gtk_property!(deleteMet, :width_request, (wBC - 5*10)/4)
+    set_gtk_property!(deleteMet, :sensitive, false)
+    signal_connect(deleteMet, :clicked) do widget
+        if hasselection(selmodelMetrics)
+            currentID = selected(selmodelMetrics)
+            newidxMet = Gtk.index_from_iter(metricsList, selected(selmodelMetrics))
+            deleteat!(metricsList, currentID)
+
+            currentIDBC = selected(selBC)
+            nameBCSel = baseCaseList[currentIDBC, 2]
+            dictMet[nameBCSel] = deleteat!(dictMet[nameBCSel], newidxMet)
+
+            if length(metricsList)==0
+                set_gtk_property!(deleteMet, :sensitive, false)
+                set_gtk_property!(clearMet, :sensitive, false)
+            end
+
+            if length(metricsList) < 2
+                newidxBC = Gtk.index_from_iter(baseCaseList, selected(selmodelBaseCase))
+                baseCaseList[newidxBC, 4] = "Incomplete"
+            end
+
+            newidxBC = Gtk.index_from_iter(baseCaseList, selected(selBC))
+            dictMet["$(baseCaseList[newidxBC,2])"] = []
+
+            testMet = zeros(1, length(metricsList))
+            for i = 1:length(metricsList)
+                push!(dictMet["$(baseCaseList[newidxBC,2])"], (metricsList[i, 1], metricsList[i, 2], metricsList[i, 3], 0))
+
+                if metricsList[i, 1] == "not specified"
+                    testMet[i] = 1
+                end
+            end
+
+            newidxBC = Gtk.index_from_iter(baseCaseList, selected(selmodelBaseCase))
+
+            if length(metricsList) >= 1
+                if sum(testMet) == 0
+                    baseCaseList[newidxBC, 4] = @sprintf("Metrics = %i, Complete", length(metricsList))
+                end
+            end
+        end
+    end
+
+    clearMet = Button("Clear")
+    set_gtk_property!(clearMet, :width_request, (wBC - 5*10)/4)
+    set_gtk_property!(clearMet, :sensitive, false)
+    signal_connect(clearMet, :clicked) do widget
+        currentIDBC = selected(selBC)
+        nameBCSel = baseCaseList[currentIDBC, 2]
+        dictEq[nameBCSel] = []
+        empty!(metricsList)
+        set_gtk_property!(clearMet, :sensitive, false)
+        set_gtk_property!(deleteMet, :sensitive, false)
+
+        newidxBC = Gtk.index_from_iter(baseCaseList, selected(selmodelBaseCase))
+        baseCaseList[newidxBC, 4] = "Incomplete"
+    end
+
+    helpMet = Button("Help")
+    set_gtk_property!(helpMet, :width_request, (wBC - 5*10)/4)
+    set_gtk_property!(helpMet, :sensitive, false)
+    signal_connect(helpMet, :clicked) do widget
+        # Metrics Help Win
+        metricsHelpWin = Window()
+        set_gtk_property!(metricsHelpWin, :title, "Metrics Help")
+        set_gtk_property!(metricsHelpWin, :window_position, 3)
+        set_gtk_property!(metricsHelpWin, :accept_focus, true)
+        set_gtk_property!(metricsHelpWin, :resizable, false)
+        set_gtk_property!(metricsHelpWin, :width_request, h/2.5)
+
+        metricsFrameHelp = Frame("Metrics evailable")
+        set_gtk_property!(metricsFrameHelp, :label_xalign, 0.5)
+        set_gtk_property!(metricsFrameHelp, :margin_top, 5)
+        set_gtk_property!(metricsFrameHelp, :margin_bottom, 10)
+        set_gtk_property!(metricsFrameHelp, :margin_left, 10)
+        set_gtk_property!(metricsFrameHelp, :margin_right, 10)
+
+        metricsGridHelp = Grid()
+        set_gtk_property!(metricsGridHelp, :column_spacing, 10)
+        set_gtk_property!(metricsGridHelp, :row_spacing, 10)
+        set_gtk_property!(metricsGridHelp, :margin_top, 5)
+        set_gtk_property!(metricsGridHelp, :margin_bottom, 10)
+        set_gtk_property!(metricsGridHelp, :margin_left, 10)
+        set_gtk_property!(metricsGridHelp, :margin_right, 10)
+
+        metricsFrameTreeH = Frame()
+        set_gtk_property!(metricsFrameTreeH, :width_request, h/2.5 - 20)
+        set_gtk_property!(metricsFrameTreeH, :height_request, h/2 - 30 - 60)
+
+        metricsScrollH = ScrolledWindow()
+        push!(metricsFrameTreeH, metricsScrollH)
+
+        # Table for Metrics help
+        metList = ListStore(String, String, String)
+
+        # Load data from listEqPhenomena
+
+        for i=1:size(listMet)[1]
+            push!(metList, (listMet[i,1], listMet[i,2], string(listMet[i,3])))
+        end
+
+        # Visual Table for Metrics help
+        metricsTreeViewH = TreeView(TreeModel(metList))
+        set_gtk_property!(metricsTreeViewH, :reorderable, true)
+        set_gtk_property!(metricsTreeViewH, :enable_grid_lines, 3)
+
+        # Set selectable
+        selMetHelp = Gtk.GAccessor.selection(metricsTreeViewH)
+        selMetHelp = Gtk.GAccessor.mode(selMetHelp, Gtk.GConstants.GtkSelectionMode.SINGLE)
+        selMetHelp = G_.selection(metricsTreeViewH)
+
+        renderTxtMet = CellRendererText()
+        set_gtk_property!(renderTxtMet, :editable, false)
+
+        c1 = TreeViewColumn("ID", renderTxtMet, Dict([("text", 0)]))
+        c2 = TreeViewColumn("Metric", renderTxtMet, Dict([("text", 1)]))
+        c3 = TreeViewColumn("Symbol", renderTxtMet, Dict([("text", 2)]))
+
+        # Allows to select rows
+        for c in [c1, c2, c3]
+            Gtk.GAccessor.resizable(c, true)
+        end
+
+        push!(metricsTreeViewH, c1, c2, c3)
+        push!(metricsScrollH, metricsTreeViewH)
+
+        metricsClose = Button("Close")
+        set_gtk_property!(metricsClose, :label, "Close")
+        set_gtk_property!(metricsClose, :tooltip_markup, "Close")
+        signal_connect(metricsClose, :clicked) do widget
+            destroy(metricsHelpWin)
+        end
+
+        metricsAdd = Button("Add")
+        set_gtk_property!(metricsAdd, :label, "Add")
+        set_gtk_property!(metricsAdd, :tooltip_markup, "Add")
+        signal_connect(metricsAdd, :clicked) do widget
+            currentID = selected(selMetHelp)
+            push!(metricsList, (metList[currentID, 1], metList[currentID, 2], metList[currentID, 3], "not specified"))
+            set_gtk_property!(clearMet, :sensitive, true)
+            set_gtk_property!(deleteMet, :sensitive, true)
+
+            newidxBC = Gtk.index_from_iter(baseCaseList, selected(selBC))
+            dictMet["$(baseCaseList[newidxBC,2])"] = []
+
+            testMet = zeros(1, length(metricsList))
+            for i = 1:length(metricsList)
+                push!(dictMet["$(baseCaseList[newidxBC,2])"], (metricsList[i, 1], metricsList[i, 2], metricsList[i, 3], metricsList[i, 4]))
+
+                if metricsList[i, 1] == "not specified"
+                    testMet[i] = 1
+                end
+            end
+
+            newidxBC = Gtk.index_from_iter(baseCaseList, selected(selmodelBaseCase))
+
+            if length(metricsList) >= 1
+                if sum(testMet) == 0
+                    baseCaseList[newidxBC, 4] = @sprintf("Metrics = %i, Complete", length(metricsList))
+                end
+            end
+        end
+
+        signal_connect(metricsTreeViewH, :row_activated) do widget, path, column
+            currentID = selected(selMetHelp)
+            push!(metricsList, (metList[currentID,1], metList[currentID,2], metList[currentID,3], "not specified"))
+            set_gtk_property!(clearMet, :sensitive, true)
+            set_gtk_property!(deleteMet, :sensitive, true)
+
+            newidxBC = Gtk.index_from_iter(baseCaseList, selected(selBC))
+            dictMet["$(baseCaseList[newidxBC,2])"] = []
+
+            testMet = zeros(1, length(metricsList))
+            for i = 1:length(metricsList)
+                push!(dictMet["$(baseCaseList[newidxBC,2])"], (metricsList[i, 1], metricsList[i, 2], metricsList[i, 3], metricsList[i, 4]))
+
+                if metricsList[i, 1] == "not specified"
+                    testMet[i] = 1
+                end
+            end
+
+            newidxBC = Gtk.index_from_iter(baseCaseList, selected(selmodelBaseCase))
+
+            if length(metricsList) >= 1
+                if sum(testMet) == 0
+                    baseCaseList[newidxBC, 4] = @sprintf("Metrics = %i, Complete", length(metricsList))
+                end
+            end
+        end
+
+        metricsGridHelp[1, 2] = metricsAdd
+        metricsGridHelp[2, 2] = metricsClose
+        metricsGridHelp[1:2, 1] = metricsFrameTreeH
+        push!(metricsFrameHelp, metricsGridHelp)
+        push!(metricsHelpWin, metricsFrameHelp)
+        Gtk.showall(metricsHelpWin)
+    end
+
+    metricsGrid[1, 2] = addMet
+    metricsGrid[2, 2] = deleteMet
+    metricsGrid[3, 2] = clearMet
+    metricsGrid[4, 2] = helpMet
+
+    push!(metricsFrame, metricsGrid)
+    ####################################################################################################################
+
     ####################################################################################################################
 
     ####################################################################################################################
@@ -822,7 +1219,7 @@ function mainPI()
 
     helpCr = Button("Help")
     set_gtk_property!(helpCr, :width_request, (wBC - 5*10)/4)
-    set_gtk_property!(helpCr, :sensitive, true)
+    set_gtk_property!(helpCr, :sensitive, false)
 
     criterionGrid[1, 2] = addCr
     criterionGrid[2, 2] = deleteCr
@@ -913,7 +1310,7 @@ function mainPI()
 
     helpCrSett = Button("Help")
     set_gtk_property!(helpCrSett, :width_request, (wBC - 5*10)/4)
-    set_gtk_property!(helpCrSett, :sensitive, true)
+    set_gtk_property!(helpCrSett, :sensitive, false)
 
     crSettGrid[1, 2] = addCrSett
     crSettGrid[2, 2] = deleteCrSett
@@ -923,12 +1320,12 @@ function mainPI()
     push!(crSettFrame, crSettGrid)
 
 
-    push!(equitCritNotebook, equipmentFrame, "Equipment")
-    push!(equitCritNotebook, metricsFrame, "Metrics")
+    push!(equitMetNotebook, equipmentFrame, "Equipment")
+    push!(equitMetNotebook, metricsFrame, "Metrics")
 
     ####################################################################################################################
     settingGridLeft[1, 1] = baseCaseFrame
-    settingGridLeft[1, 2] = equitCritFrame
+    settingGridLeft[1, 2] = equitMetFrame
 
     settingGridRight[1, 1] = criterionFrame
     settingGridRight[1, 2] = crSettFrame
