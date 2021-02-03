@@ -8,6 +8,7 @@ if Sys.iswindows()
     global ico5 = joinpath(dirname(Base.source_path()), "icons\\icon_help.ico")
     global ico6 = joinpath(dirname(Base.source_path()), "icons\\icon_open.ico")
     global ico7 = joinpath(dirname(Base.source_path()), "icons\\icon_save.ico")
+    global ico8 = joinpath(dirname(Base.source_path()), "icons\\icon_run.png")
 end
 
 if Sys.islinux()
@@ -19,6 +20,7 @@ if Sys.islinux()
     global ico5 = joinpath(dirname(Base.source_path()), "icons/icon_help.ico")
     global ico6 = joinpath(dirname(Base.source_path()), "icons/icon_open.ico")
     global ico7 = joinpath(dirname(Base.source_path()), "icons/icon_save.ico")
+    global ico8 = joinpath(dirname(Base.source_path()), "icons/icon_run.png")
 end
 
 # TODO: check compatibility to macOS
@@ -56,6 +58,14 @@ function mainPI()
     set_gtk_property!(pdfToolbar, :label, "Export")
     set_gtk_property!(pdfToolbar, :tooltip_markup, "Export report")
     set_gtk_property!(pdfToolbar, :sensitive, false)
+
+    runToolbar = ToolButton("")
+    runToolbarImg = Image()
+    set_gtk_property!(runToolbarImg, :file, ico8)
+    set_gtk_property!(runToolbar, :icon_widget, runToolbarImg)
+    set_gtk_property!(runToolbar, :label, "Solve")
+    set_gtk_property!(runToolbar, :tooltip_markup, "Solve")
+    set_gtk_property!(runToolbar, :sensitive, true)
 
     settingsToolbar = ToolButton("")
     settingsToolbarImg = Image()
@@ -112,6 +122,7 @@ function mainPI()
     push!(mainToolbar, pdfToolbar)
     push!(mainToolbar, saveToolbar)
     push!(mainToolbar, SeparatorToolItem())
+    push!(mainToolbar, runToolbar)
     push!(mainToolbar, settingsToolbar)
     push!(mainToolbar, helpToolbar)
     push!(mainToolbar, SeparatorToolItem())
@@ -217,7 +228,7 @@ function mainPI()
     c3 = TreeViewColumn("Equipments", renderTxt2, Dict([("text", 2)]))
     c4 = TreeViewColumn("Metrics", renderTxt2, Dict([("text", 3)]))
     c5 = TreeViewColumn("Criterion", renderTxt2, Dict([("text", 4)]))
-    c6 = TreeViewColumn("Status", renderTxt2, Dict([("text", 4)]))
+    c6 = TreeViewColumn("Status", renderTxt2, Dict([("text", 5)]))
 
     signal_connect(renderTxt1, "edited") do widget, path, text
         idxTree = parse(Int, path)
@@ -234,6 +245,8 @@ function mainPI()
                 currentID = selected(selmodelBaseCase)
                 dictBC["$(text)"] = pop!(dictBC, "$(baseCaseList[currentID, 2])")
                 dictEq["$(text)"] = pop!(dictEq, "$(baseCaseList[currentID, 2])")
+                dictMet["$(text)"] = pop!(dictMet, "$(baseCaseList[currentID, 2])")
+                dictCriteriaM["$(text)"] = pop!(dictCriteriaM, "$(baseCaseList[currentID, 2])")
                 baseCaseList[idxTree + 1, 2] = text
             end
         end
@@ -252,6 +265,7 @@ function mainPI()
 
         empty!(equipmentList)
         empty!(metricsList)
+        empty!(criterionList)
 
         newSel = length(dictEq["$(baseCaseList[currentID, 2])"])
         if newSel != 0
@@ -293,6 +307,26 @@ function mainPI()
                 ),
             )
         end
+
+        newSelCr = length(dictCriteriaM["$(baseCaseList[currentID, 2])"])
+        if newSelCr != 0
+            set_gtk_property!(clearCr, :sensitive, true)
+            set_gtk_property!(deleteCr, :sensitive, true)
+        else
+            set_gtk_property!(clearCr, :sensitive, false)
+            set_gtk_property!(deleteCr, :sensitive, false)
+        end
+
+        for i = 1:newSelCr
+            push!(
+                criterionList,
+                (
+                dictCriteriaM["$(baseCaseList[currentID, 2])"][i][1],
+                dictCriteriaM["$(baseCaseList[currentID, 2])"][i][2],
+                dictCriteriaM["$(baseCaseList[currentID, 2])"][i][3],
+                ),
+            )
+        end
     end
 
     # Allows to select rows
@@ -324,6 +358,7 @@ function mainPI()
             dictBC["$(baseCaseName)"] = []
             dictEq["$(baseCaseName)"] = []
             dictMet["$(baseCaseName)"] = []
+            dictCriteriaM["$(baseCaseName)"] = []
             global idxBC += 1
             global idxEq = zeros(1, idxBC)
         else
@@ -337,6 +372,7 @@ function mainPI()
             dictBC["$(baseCaseName)"] = []
             dictEq["$(baseCaseName)"] = []
             dictMet["$(baseCaseName)"] = []
+            dictCriteriaM["$(baseCaseName)"] = []
 
             global idxBC += 1
             global idxEq = zeros(1, idxBC)
@@ -351,9 +387,12 @@ function mainPI()
             currentID = selected(selBC)
             delete!(dictBC, baseCaseList[currentID, 2])
             delete!(dictEq, baseCaseList[currentID, 2])
+            delete!(dictMet, baseCaseList[currentID, 2])
+            delete!(dictCriteriaM, baseCaseList[currentID, 2])
             deleteat!(baseCaseList, currentID)
             empty!(equipmentList)
             empty!(metricsList)
+            empty!(criterionList)
 
             if length(baseCaseList) > 0
                 newidxBC = Gtk.index_from_iter(baseCaseList, selected(selBC))
@@ -364,6 +403,7 @@ function mainPI()
                 empty!(baseCaseList)
                 empty!(equipmentList)
                 empty!(metricsList)
+                empty!(criterionList)
                 set_gtk_property!(clearBC, :sensitive, false)
                 set_gtk_property!(clearEq, :sensitive, false)
                 set_gtk_property!(deleteBC, :sensitive, false)
@@ -381,6 +421,8 @@ function mainPI()
                 set_gtk_property!(addCrSett, :sensitive, false)
                 set_gtk_property!(helpCr, :sensitive, false)
                 set_gtk_property!(helpCrSett, :sensitive, false)
+                set_gtk_property!(deleteCr, :sensitive, false)
+                set_gtk_property!(clearCr, :sensitive, false)
             end
             global idxEq = zeros(1, idxBC)
         end
@@ -393,6 +435,7 @@ function mainPI()
         empty!(baseCaseList)
         empty!(equipmentList)
         empty!(metricsList)
+        empty!(criterionList)
         set_gtk_property!(clearBC, :sensitive, false)
         set_gtk_property!(clearEq, :sensitive, false)
         set_gtk_property!(deleteBC, :sensitive, false)
@@ -410,9 +453,13 @@ function mainPI()
         set_gtk_property!(helpCr, :sensitive, false)
         set_gtk_property!(helpCrSett, :sensitive, false)
         set_gtk_property!(equitMetNotebook, :page, 0)
+        set_gtk_property!(deleteCr, :sensitive, false)
+        set_gtk_property!(clearCr, :sensitive, false)
 
         global dictBC = Dict()
         global dictEq = Dict()
+        global dictMet = Dict()
+        global dictCriteriaM = Dict()
         global idxBC = 1
     end
 
@@ -874,7 +921,6 @@ function mainPI()
 
     metricsGrid[1:4, 1] = metricsFrameTree
 
-# TODO Add code for edited cell for 0both ID and value in Metrics
     signal_connect(renderTxtM1, "edited") do widget, path, text
         idxTreeMet = parse(Int, path) + 1
         idxIDMet = parse(Int, text)
@@ -892,10 +938,10 @@ function mainPI()
                     for i = 1:length(metricsList)
                         push!(
                             dictMet["$(baseCaseList[newidxBC,2])"],
-                            (metricsList[i, 1], metricsList[i, 2], metricsList[i, 3]), metricsList[i, 4],
+                            (metricsList[i, 1], metricsList[i, 2], metricsList[i, 3], metricsList[i, 4])
                             )
 
-                            if metricsList[i, 1] == "not specified"
+                            if (metricsList[i, 1] == "not specified") || (metricsList[i, 4] == "not specified")
                                 testMet[i] = 1
                             end
                     end
@@ -910,6 +956,41 @@ function mainPI()
                 else
                     warn_dialog("No metric specified for option $(idxIDMet), see Help", mainPIWin)
                 end
+    end
+
+    signal_connect(renderTxtM3, "edited") do widget, path, text
+        idxTreeMet = parse(Int, path) + 1
+
+        try
+            idxIDMet = parse(Int, text)
+
+            metricsList[idxTreeMet, 4] = text
+
+            newidxBC = Gtk.index_from_iter(baseCaseList, selected(selBC))
+            dictMet["$(baseCaseList[newidxBC,2])"] = []
+
+            testMet = zeros(1, length(metricsList))
+            for i = 1:length(metricsList)
+                push!(
+                dictMet["$(baseCaseList[newidxBC,2])"],
+                (metricsList[i, 1], metricsList[i, 2], metricsList[i, 3], metricsList[i, 4])
+                )
+
+                if (metricsList[i, 1] == "not specified") || (metricsList[i, 4] == "not specified")
+                    testMet[i] = 1
+                end
+            end
+            newidxBC = Gtk.index_from_iter(baseCaseList, selected(selmodelBaseCase))
+
+            if length(metricsList) >= 1
+                if sum(testMet) == 0
+                    baseCaseList[newidxBC, 4] = @sprintf("Metrics = %i, Complete", length(metricsList))
+                end
+            end
+
+        catch e
+            warn_dialog("No valid option", mainPIWin)
+        end
     end
 
     # Buttons for base case design
@@ -955,9 +1036,9 @@ function mainPI()
 
             testMet = zeros(1, length(metricsList))
             for i = 1:length(metricsList)
-                push!(dictMet["$(baseCaseList[newidxBC,2])"], (metricsList[i, 1], metricsList[i, 2], metricsList[i, 3], 0))
+                push!(dictMet["$(baseCaseList[newidxBC,2])"], (metricsList[i, 1], metricsList[i, 2], metricsList[i, 3], metricsList[i,4]))
 
-                if metricsList[i, 1] == "not specified"
+                if (metricsList[i, 1] == "not specified") || (metricsList[i, 4] == "not specified")
                     testMet[i] = 1
                 end
             end
@@ -1072,13 +1153,14 @@ function mainPI()
             set_gtk_property!(deleteMet, :sensitive, true)
 
             newidxBC = Gtk.index_from_iter(baseCaseList, selected(selBC))
+            baseCaseList[newidxBC, 4] = "Incomplete"
             dictMet["$(baseCaseList[newidxBC,2])"] = []
 
             testMet = zeros(1, length(metricsList))
             for i = 1:length(metricsList)
                 push!(dictMet["$(baseCaseList[newidxBC,2])"], (metricsList[i, 1], metricsList[i, 2], metricsList[i, 3], metricsList[i, 4]))
 
-                if metricsList[i, 1] == "not specified"
+                if (metricsList[i, 1] == "not specified") || (metricsList[i, 4] == "not specified")
                     testMet[i] = 1
                 end
             end
@@ -1099,13 +1181,15 @@ function mainPI()
             set_gtk_property!(deleteMet, :sensitive, true)
 
             newidxBC = Gtk.index_from_iter(baseCaseList, selected(selBC))
+            baseCaseList[newidxBC, 4] = "Incomplete"
+
             dictMet["$(baseCaseList[newidxBC,2])"] = []
 
             testMet = zeros(1, length(metricsList))
             for i = 1:length(metricsList)
                 push!(dictMet["$(baseCaseList[newidxBC,2])"], (metricsList[i, 1], metricsList[i, 2], metricsList[i, 3], metricsList[i, 4]))
 
-                if metricsList[i, 1] == "not specified"
+                if (metricsList[i, 1] == "not specified") || (metricsList[i, 4] == "not specified")
                     testMet[i] = 1
                 end
             end
@@ -1140,8 +1224,13 @@ function mainPI()
     ####################################################################################################################
     # Criterion
     ####################################################################################################################
+    global listCriteriaM = DataFrames.DataFrame(ID = Int[], Criterion = String[])
+    global dictCriteriaM = Dict()
+
+    # Add avilable aquipments and phenomenas
+    push!(listCriteriaM, (1, "Pressure"))
+
     criterionFrame = Frame(" Criterion ")
-    set_gtk_property!(criterionFrame, :height_request, (hNb - 30)/2)
     set_gtk_property!(criterionFrame, :width_request, (h / 2) - 15)
     set_gtk_property!(criterionFrame, :label_xalign, 0.50)
 
@@ -1156,6 +1245,7 @@ function mainPI()
     # TreeView for Base Case Design
     wBC = (h / 2) - 15
     criterionFrameTree = Frame()
+
     set_gtk_property!(criterionFrameTree, :height_request, (hNb - 30)/2 - 75)
     set_gtk_property!(criterionFrameTree, :width_request, wBC - 20)
     criterionScroll = ScrolledWindow()
@@ -1172,14 +1262,14 @@ function mainPI()
     # Set selectable
     selmodelcriterion = G_.selection(criterionTreeView)
 
-    renderTxt5 = CellRendererText()
-    renderTxt6 = CellRendererText()
-    set_gtk_property!(renderTxt5, :editable, true)
-    set_gtk_property!(renderTxt6, :editable, false)
+    renderTxtCrM1 = CellRendererText()
+    renderTxtCrM2 = CellRendererText()
+    set_gtk_property!(renderTxtCrM1, :editable, true)
+    set_gtk_property!(renderTxtCrM2, :editable, false)
 
-    c1 = TreeViewColumn("ID", renderTxt5, Dict([("text", 0)]))
-    c2 = TreeViewColumn("Criterion", renderTxt6, Dict([("text", 1)]))
-    c3 = TreeViewColumn("Status", renderTxt6, Dict([("text", 2)]))
+    c1 = TreeViewColumn("ID", renderTxtCrM1, Dict([("text", 0)]))
+    c2 = TreeViewColumn("Criterion", renderTxtCrM2, Dict([("text", 1)]))
+    c3 = TreeViewColumn("Status", renderTxtCrM2, Dict([("text", 2)]))
 
     # Allows to select rows
     for c in [c1, c2, c3]
@@ -1192,8 +1282,39 @@ function mainPI()
     criterionGrid[1:4, 1] = criterionFrameTree
 
     # Edited
-    signal_connect(renderTxt5, "edited") do widget, path, text
+    signal_connect(renderTxtCrM1, "edited") do widget, path, text
+        idxTreeCrM = parse(Int, path) + 1
+        idxIDCrM = parse(Int, text) # Number provided by user
 
+        if idxIDCrM >= 1 && idxIDCrM <= 1
+            criterionList[idxTreeCrM, 1] = text
+            criterionList[idxTreeCrM, 2] = listCriteriaM[idxIDCrM, 2]
+            criterionList[idxTreeCrM, 3] = "incomplete"
+
+            newidxBC = Gtk.index_from_iter(baseCaseList, selected(selBC))
+            dictCriteriaM["$(baseCaseList[newidxBC,2])"] = []
+
+            testCrM = zeros(1, length(criterionList))
+            for i = 1:length(criterionList)
+                push!(
+                    dictCriteriaM["$(baseCaseList[newidxBC,2])"],
+                    (criterionList[i, 1], criterionList[i, 2], criterionList[i, 3]),
+                    )
+
+                    if criterionList[i, 1] == "not specified"
+                        testCrM[i] = 1
+                    end
+            end
+
+            if length(criterionList) >= 1
+                if sum(testCrM) == 0
+                    baseCaseList[newidxBC, 5] = @sprintf("Criterion = %i, Complete", length(criterionList))
+                end
+            end
+
+        else
+            warn_dialog("No criterion available for $(idxIDCrM), see Help", mainPIWin)
+        end
     end
 
     # Buttons for base case design
@@ -1201,25 +1322,213 @@ function mainPI()
     set_gtk_property!(addCr, :width_request, (wBC - 5*10)/4)
     set_gtk_property!(addCr, :sensitive, false)
     signal_connect(addCr, :clicked) do widget
+        push!(criterionList, ("not specified", "not specified", "Incomplete"))
+        set_gtk_property!(clearCr, :sensitive, true)
+        set_gtk_property!(deleteCr, :sensitive, true)
+
+        newidxBC = Gtk.index_from_iter(baseCaseList, selected(selBC))
+        push!(dictCriteriaM["$(baseCaseList[newidxBC,2])"], ("not specified", "not specified", "Incomplete"))
+
+        baseCaseList[newidxBC, 5] = "Incomplete"
     end
 
     deleteCr = Button("Delete")
     set_gtk_property!(deleteCr, :width_request, (wBC - 5*10)/4)
     set_gtk_property!(deleteCr, :sensitive, false)
     signal_connect(deleteCr, :clicked) do widget
+        if hasselection(selmodelcriterion)
+            currentID = selected(selmodelcriterion)
+            newidxBC = Gtk.index_from_iter(criterionList, selected(selmodelcriterion))
+            deleteat!(criterionList, currentID)
 
+            currentIDBC = selected(selBC)
+            nameBCSel = baseCaseList[currentIDBC, 2]
+            dictCriteriaM[nameBCSel] = deleteat!(dictCriteriaM[nameBCSel], newidxBC)
+
+            if length(criterionList)==0
+                set_gtk_property!(deleteCr, :sensitive, false)
+                set_gtk_property!(clearCr, :sensitive, false)
+                baseCaseList[newidxBC, 5] = "Incomplete"
+            end
+
+            newidxBC = Gtk.index_from_iter(baseCaseList, selected(selBC))
+            dictCriteriaM["$(baseCaseList[newidxBC,2])"] = []
+
+            testCrM = zeros(1, length(criterionList))
+            for i = 1:length(criterionList)
+                push!(
+                    dictCriteriaM["$(baseCaseList[newidxBC,2])"],
+                    (criterionList[i, 1], criterionList[i, 2], criterionList[i, 3]),
+                    )
+
+                    if criterionList[i, 1] == "not specified"
+                        testCrM[i] = 1
+                    end
+            end
+
+            newidxBC = Gtk.index_from_iter(baseCaseList, selected(selmodelBaseCase))
+
+            if length(criterionList) >= 1
+                if sum(testCrM) == 0
+                    baseCaseList[newidxBC, 5] = @sprintf("Criterion = %i, Complete", length(criterionList))
+                end
+            end
+
+        end
     end
 
     clearCr = Button("Clear")
     set_gtk_property!(clearCr, :width_request, (wBC - 5*10)/4)
     set_gtk_property!(clearCr, :sensitive, false)
     signal_connect(clearCr, :clicked) do widget
+        currentIDBC = selected(selBC)
+        nameBCSel = baseCaseList[currentIDBC, 2]
+        dictCriteriaM[nameBCSel] = []
+        empty!(criterionList)
+        set_gtk_property!(clearCr, :sensitive, false)
+        set_gtk_property!(deleteCr, :sensitive, false)
 
+        newidxBC = Gtk.index_from_iter(baseCaseList, selected(selmodelBaseCase))
+        baseCaseList[newidxBC, 5] = "Incomplete"
     end
 
     helpCr = Button("Help")
     set_gtk_property!(helpCr, :width_request, (wBC - 5*10)/4)
     set_gtk_property!(helpCr, :sensitive, false)
+    signal_connect(helpCr, :clicked) do widget
+        # Criterion Help Win
+        criterionHelpWin = Window()
+        set_gtk_property!(criterionHelpWin, :title, "Criterion Help")
+        set_gtk_property!(criterionHelpWin, :window_position, 3)
+        set_gtk_property!(criterionHelpWin, :accept_focus, true)
+        set_gtk_property!(criterionHelpWin, :resizable, false)
+        set_gtk_property!(criterionHelpWin, :width_request, h/2.5)
+
+        criterionFrameHelp = Frame("Criterion evailable")
+        set_gtk_property!(criterionFrameHelp, :label_xalign, 0.5)
+        set_gtk_property!(criterionFrameHelp, :margin_top, 5)
+        set_gtk_property!(criterionFrameHelp, :margin_bottom, 10)
+        set_gtk_property!(criterionFrameHelp, :margin_left, 10)
+        set_gtk_property!(criterionFrameHelp, :margin_right, 10)
+
+        criterionGridHelp = Grid()
+        set_gtk_property!(criterionGridHelp, :column_spacing, 10)
+        set_gtk_property!(criterionGridHelp, :row_spacing, 10)
+        set_gtk_property!(criterionGridHelp, :margin_top, 5)
+        set_gtk_property!(criterionGridHelp, :margin_bottom, 10)
+        set_gtk_property!(criterionGridHelp, :margin_left, 10)
+        set_gtk_property!(criterionGridHelp, :margin_right, 10)
+
+        criterionFrameTree = Frame()
+        set_gtk_property!(criterionFrameTree, :width_request, h/2.5 - 20)
+        set_gtk_property!(criterionFrameTree, :height_request, h/2 - 30 - 60)
+
+        criterionScroll = ScrolledWindow()
+        push!(criterionFrameTree, criterionScroll)
+
+        # Table for Equipment help
+        criterionListH = ListStore(Int, String)
+
+        # Load data from criterionList
+
+        for i=1:size(listCriteriaM)[1]
+            push!(criterionListH, (listCriteriaM[i,1], listCriteriaM[i,2]))
+        end
+
+        # Visual Table for Equipment help
+        criterionHTreeView = TreeView(TreeModel(criterionListH))
+        set_gtk_property!(criterionHTreeView, :reorderable, true)
+        set_gtk_property!(criterionHTreeView, :enable_grid_lines, 3)
+
+        # Set selectable
+        selCriterionHelp = Gtk.GAccessor.selection(criterionHTreeView)
+        selCriterionHelp = Gtk.GAccessor.mode(selCriterionHelp, Gtk.GConstants.GtkSelectionMode.SINGLE)
+        selCriterionHelp = G_.selection(criterionHTreeView)
+
+        renderTxtCrH = CellRendererText()
+        set_gtk_property!(renderTxtCrH, :editable, false)
+
+        c1 = TreeViewColumn("ID", renderTxtCrH, Dict([("text", 0)]))
+        c2 = TreeViewColumn("Criterion", renderTxtCrH, Dict([("text", 1)]))
+
+        # Allows to select rows
+        for c in [c1, c2]
+            Gtk.GAccessor.resizable(c, true)
+        end
+
+        push!(criterionHTreeView, c1, c2)
+        push!(criterionScroll, criterionHTreeView)
+        criterionClose = Button("Close")
+        set_gtk_property!(criterionClose, :label, "Close")
+        set_gtk_property!(criterionClose, :tooltip_markup, "Close")
+        signal_connect(criterionClose, :clicked) do widget
+            destroy(criterionHelpWin)
+        end
+
+        criterionAdd = Button("Add")
+        set_gtk_property!(criterionAdd, :label, "Add")
+        set_gtk_property!(criterionAdd, :tooltip_markup, "Add")
+        signal_connect(criterionAdd, :clicked) do widget
+            currentID = selected(selCriterionHelp)
+            push!(criterionList, (criterionListH[currentID, 1], criterionListH[currentID, 2], "incomplete"))
+            set_gtk_property!(clearCr, :sensitive, true)
+            set_gtk_property!(deleteCr, :sensitive, true)
+
+            newidxBC = Gtk.index_from_iter(baseCaseList, selected(selBC))
+            dictCriteriaM["$(baseCaseList[newidxBC,2])"] = []
+
+            testCrM = zeros(1, length(criterionList))
+            for i = 1:length(criterionList)
+                push!(dictCriteriaM["$(baseCaseList[newidxBC,2])"], (criterionList[i, 1], criterionList[i, 2], "incomplete"))
+
+                if criterionList[i, 1] == "not specified"
+                    testCrM[i] = 1
+                end
+            end
+
+            newidxBC = Gtk.index_from_iter(baseCaseList, selected(selmodelBaseCase))
+
+            if length(criterionList) >= 1
+                if sum(testCrM) == 0
+                    baseCaseList[newidxBC, 5] = @sprintf("Criterion = %i, Complete", length(criterionList))
+                end
+            end
+        end
+
+        signal_connect(criterionHTreeView, :row_activated) do widget, path, column
+            currentID = selected(selCriterionHelp)
+            push!(criterionList, (criterionListH[currentID,1], criterionListH[currentID,2], "incomplete"))
+            set_gtk_property!(clearCr, :sensitive, true)
+            set_gtk_property!(deleteCr, :sensitive, true)
+
+            newidxBC = Gtk.index_from_iter(baseCaseList, selected(selBC))
+            dictCriteriaM["$(baseCaseList[newidxBC,2])"] = []
+
+            testCrM = zeros(1, length(criterionList))
+            for i = 1:length(criterionList)
+                push!(dictCriteriaM["$(baseCaseList[newidxBC,2])"], (criterionList[i, 1], criterionList[i, 2], "incomplete"))
+
+                if criterionList[i, 1] == "not specified"
+                    testCrM[i] = 1
+                end
+            end
+
+            newidxBC = Gtk.index_from_iter(baseCaseList, selected(selmodelBaseCase))
+
+            if length(criterionList) >= 1
+                if sum(testCrM) == 0
+                    baseCaseList[newidxBC, 5] = @sprintf("Criterion = %i, Complete", length(criterionList))
+                end
+            end
+        end
+
+        criterionGridHelp[1, 2] = criterionAdd
+        criterionGridHelp[2, 2] = criterionClose
+        criterionGridHelp[1:2, 1] = criterionFrameTree
+        push!(criterionFrameHelp, criterionGridHelp)
+        push!(criterionHelpWin, criterionFrameHelp)
+        Gtk.showall(criterionHelpWin)
+    end
 
     criterionGrid[1, 2] = addCr
     criterionGrid[2, 2] = deleteCr
