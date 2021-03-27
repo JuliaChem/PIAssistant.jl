@@ -1,5 +1,3 @@
-ENV["GTK_CSD"] = 0
-
 # General Settings
 if Sys.iswindows()
     # Icons path on Windows
@@ -28,6 +26,8 @@ end
 # TODO: check compatibility to macOS
 
 function mainPI()
+    ENV["GTK_CSD"] = 0
+    
     # Measurement of screen size to allow compatibility to all screen devices
     global w, h = screen_size()
 
