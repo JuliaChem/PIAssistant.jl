@@ -1,3 +1,5 @@
+ENV["GTK_CSD"] = 0
+
 # General Settings
 if Sys.iswindows()
     # Icons path on Windows
@@ -259,9 +261,7 @@ function mainPI()
         set_gtk_property!(addMet, :sensitive, true)
         set_gtk_property!(helpMet, :sensitive, true)
         set_gtk_property!(addCr, :sensitive, true)
-        set_gtk_property!(addCrSett, :sensitive, true)
         set_gtk_property!(helpCr, :sensitive, true)
-        set_gtk_property!(helpCrSett, :sensitive, true)
 
         empty!(equipmentList)
         empty!(metricsList)
@@ -418,9 +418,7 @@ function mainPI()
                 set_gtk_property!(clearMet, :sensitive, false)
                 set_gtk_property!(equitMetNotebook, :page, 0)
                 set_gtk_property!(addCr, :sensitive, false)
-                set_gtk_property!(addCrSett, :sensitive, false)
                 set_gtk_property!(helpCr, :sensitive, false)
-                set_gtk_property!(helpCrSett, :sensitive, false)
                 set_gtk_property!(deleteCr, :sensitive, false)
                 set_gtk_property!(clearCr, :sensitive, false)
             end
@@ -449,9 +447,7 @@ function mainPI()
         set_gtk_property!(deleteMet, :sensitive, false)
         set_gtk_property!(clearMet, :sensitive, false)
         set_gtk_property!(addCr, :sensitive, false)
-        set_gtk_property!(addCrSett, :sensitive, false)
         set_gtk_property!(helpCr, :sensitive, false)
-        set_gtk_property!(helpCrSett, :sensitive, false)
         set_gtk_property!(equitMetNotebook, :page, 0)
         set_gtk_property!(deleteCr, :sensitive, false)
         set_gtk_property!(clearCr, :sensitive, false)
@@ -851,7 +847,7 @@ function mainPI()
     push!(listMet, (2, "Purchase cost", "PC", "not specified"))
     push!(listMet, (3, "Utility cost", "UC", "not specified"))
     push!(listMet, (4, "Profit", "Pr", "not specified"))
-    push!(listMet, (5, "Return of investment", "ROI", "not specified"))
+    push!(listMet, (5, "Return on investment", "ROI", "not specified"))
     push!(listMet, (6, "Human toxicity by ingestion", "HTPI", "not specified"))
     push!(listMet, (7, "Human toxicity by exposure", "HTPE", "not specified"))
     push!(listMet, (8, "Global Warming", "GWP", "not specified"))
@@ -1317,6 +1313,14 @@ function mainPI()
         end
     end
 
+    signal_connect(criterionTreeView, :row_activated) do widget, path, column
+        currentID = selected(selmodelcriterion)
+
+        for i=1:length(equipmentList)
+            push!(crSettList, (equipmentList[i,1], equipmentList[i,2], 0))
+        end
+    end
+
     # Buttons for base case design
     addCr = Button("Add")
     set_gtk_property!(addCr, :width_request, (wBC - 5*10)/4)
@@ -1540,6 +1544,8 @@ function mainPI()
     ####################################################################################################################
     # Criterion Settings
     ####################################################################################################################
+    global dictCriteriaSett = Dict()
+
     crSettFrame = Frame(" Input Data for Criterion ")
     set_gtk_property!(crSettFrame, :height_request, (hNb - 30)/2)
     set_gtk_property!(crSettFrame, :width_request, (h / 2) - 15)
@@ -1562,7 +1568,7 @@ function mainPI()
     push!(crSettFrameTree, crSettScroll)
 
     # Table for Case Design
-    crSettList = ListStore(String, String, String, String)
+    crSettList = ListStore(String, String, String)
 
     # Visual Table for Case Design
     crSettTreeView = TreeView(TreeModel(crSettList))
@@ -1596,13 +1602,6 @@ function mainPI()
 
     end
 
-    # Buttons for base case design
-    addCrSett = Button("Add")
-    set_gtk_property!(addCrSett, :width_request, (wBC - 5*10)/4)
-    set_gtk_property!(addCrSett, :sensitive, false)
-    signal_connect(addCrSett, :clicked) do widget
-    end
-
     deleteCrSett = Button("Delete")
     set_gtk_property!(deleteCrSett, :width_request, (wBC - 5*10)/4)
     set_gtk_property!(deleteCrSett, :sensitive, false)
@@ -1617,14 +1616,15 @@ function mainPI()
 
     end
 
-    helpCrSett = Button("Help")
-    set_gtk_property!(helpCrSett, :width_request, (wBC - 5*10)/4)
-    set_gtk_property!(helpCrSett, :sensitive, false)
+    signal_connect(renderTxt7, "edited") do widget, path, text
+        idxTreeCrM = parse(Int, path) + 1
+        idxIDCrM = parse(Int, text) # Number provided by user
 
-    crSettGrid[1, 2] = addCrSett
-    crSettGrid[2, 2] = deleteCrSett
-    crSettGrid[3, 2] = clearCrSett
-    crSettGrid[4, 2] = helpCrSett
+        crSettList[idxTreeCrM, 3] = idxIDCrM
+    end
+
+    crSettGrid[1:2, 2] = deleteCrSett
+    crSettGrid[3:4, 2] = clearCrSett
 
     push!(crSettFrame, crSettGrid)
 
@@ -1650,6 +1650,69 @@ function mainPI()
     set_gtk_property!(resultsFrame, :height_request, hNb)
     set_gtk_property!(resultsFrame, :width_request, h)
 
+    resultsGrid = Grid()
+    set_gtk_property!(resultsGrid, :column_spacing, 10)
+    set_gtk_property!(resultsGrid, :row_spacing, 10)
+    set_gtk_property!(resultsGrid, :margin_top, 10)
+    set_gtk_property!(resultsGrid, :margin_bottom, 10)
+    set_gtk_property!(resultsGrid, :margin_left, 10)
+    set_gtk_property!(resultsGrid, :margin_right, 10)
+
+    resultsGridLeft = Grid()
+    set_gtk_property!(resultsGridLeft, :row_spacing, 5)
+
+    resultsGridRight = Grid()
+    set_gtk_property!(resultsGridRight, :row_spacing, 5)
+
+    ibaseCaseScroll = ScrolledWindow()
+
+    ibaseCaseFrameTree = Frame()
+    set_gtk_property!(ibaseCaseFrameTree, :height_request, (hNb - 30)/2 - 75)
+    set_gtk_property!(ibaseCaseFrameTree, :width_request, wBC - 20)
+
+    # Table for Case Design
+    ibaseCaseList = ListStore(String, String, String, String, String, String)
+
+    push!(ibaseCaseList, ("Int/Base Case", "Equipment", "Metrics", "Criterion", "Solved"))
+
+    # Visual Table for Case Design
+    ibaseCaseTreeView = TreeView(TreeModel(ibaseCaseList))
+    set_gtk_property!(ibaseCaseTreeView, :reorderable, true)
+    set_gtk_property!(ibaseCaseTreeView, :enable_grid_lines, 3)
+    set_gtk_property!(ibaseCaseTreeView, :activate_on_single_click, true)
+    iselBC = Gtk.GAccessor.selection(ibaseCaseTreeView)
+    iselBC = Gtk.GAccessor.mode(iselBC, Gtk.GConstants.GtkSelectionMode.SINGLE)
+
+    # Set selectable
+    iselmodelBaseCase = G_.selection(ibaseCaseTreeView)
+
+    renderTxti1 = CellRendererText()
+    renderTxti2 = CellRendererText()
+    set_gtk_property!(renderTxti1, :editable, true)
+    set_gtk_property!(renderTxti2, :editable, false)
+
+    c1 = TreeViewColumn("ID", renderTxti2, Dict([("text", 0)]))
+    c2 = TreeViewColumn("Name", renderTxti1, Dict([("text", 1)]))
+    c3 = TreeViewColumn("Equipments", renderTxti2, Dict([("text", 2)]))
+    c4 = TreeViewColumn("Metrics", renderTxti2, Dict([("text", 3)]))
+    c5 = TreeViewColumn("Criterion", renderTxti2, Dict([("text", 4)]))
+    c6 = TreeViewColumn("Status", renderTxti2, Dict([("text", 5)]))
+    for c in [c1, c2, c3, c4, c5, c6]
+        Gtk.GAccessor.resizable(c, true)
+    end
+
+    push!(ibaseCaseTreeView, c1, c2, c3, c4, c5, c6)
+
+    println(111)
+    push!(ibaseCaseScroll, ibaseCaseTreeView)
+    push!(ibaseCaseFrameTree, ibaseCaseScroll)
+    resultsGrid[1,1] = resultsGridLeft
+    resultsGridLeft[1,1] = ibaseCaseFrameTree
+
+    println(111)
+
+    push!(resultsFrame, resultsGrid)
+    ####################################################################################################################
     push!(mainNotebook, settingFrame, "Settings")
     push!(mainNotebook, resultsFrame, "Results")
 
